@@ -14181,15 +14181,16 @@ const VIZ = (function () {
     box.querySelectorAll('[data-sheet]').forEach(b => b.addEventListener('click', () => { const k = b.dataset.sheet; if (W.cur.kind !== k) { W.cur = { kind: k, seed: newSeed(), res: {} }; save(); } renderWorksheet(); }));
     state.ws.items.forEach(ex => ex.parts.forEach(p => bindPart(p.key)));
     updateBar(); VIZ.mount(box); fillRemote(L, cur);
-    if (!box.dataset.retry) { box.dataset.retry = 1; box.addEventListener('click', (e) => { if (e.target.closest('[data-retry]')) { state.remoteDown = false; renderWorksheet(); } }); }
+    if (!box.dataset.retryBound) { box.dataset.retryBound = 1; box.addEventListener('click', (e) => { if (e.target.closest('button[data-retry]')) { state.remoteDown = false; renderWorksheet(); } }); }
   }
   /** pack parts: the task stored with this sheet, or a new one from the server */
   function fillRemote(L, cur) {
-    cur.remote = cur.remote || {};
-    for (const ex of state.ws.items) ex.parts.forEach((p, j) => {
+    cur.remote = cur.remote || {}; const ws = state.ws;
+    for (const ex of ws.items) ex.parts.forEach((p, j) => {
       if (!p.t.pending) return; const pend = p.t.pending, lvl = p.t.lvl;
       const put = (r) => {
         if (state.L !== L || W_(L.id).cur !== cur) return;          // the student moved on
+        if (state.ws !== ws) return;                                  // the sheet was re-rendered: its own fill shows (and keeps) the task
         if (!r) { p.t.off = true; state.remoteDown = true; } else { cur.remote[p.key] = r; save(); p.t = Object.assign(remoteTask(r, pend.topic), { lvl }); const done = (cur.res || {})[p.key]; if (done && done.steps) { p.t.steps = done.steps; p.t.ans.show = done.show; } }
         const el = document.querySelector(`.part[data-k="${p.key}"]`); if (!el) return; const tmp = document.createElement('div');
         tmp.innerHTML = partHTML(p, ex.parts.length > 1 ? LET[j] + ')' : '', ex.parts.length > 1, L.kind === 'test'); el.replaceWith(tmp.firstElementChild);
