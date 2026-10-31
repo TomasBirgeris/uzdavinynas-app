@@ -5552,7 +5552,7 @@ topic({
     for (const [a, b] of [[-s1, s2], [s1, -s2], [-s1, -s2]]) { const f = form(a, b); if (seen.has(f)) continue; seen.add(f); items.push([mm(f), false, `Kai ${cond}: ${terms([[1, X], [-p, '']])} ${s1 > 0 ? '&gt;' : '&lt;'} 0 ir ${terms([[1, X], [-r, '']])} ${s2 > 0 ? '&gt;' : '&lt;'} 0. Neigiamo reiškinio modulis — jam priešingas reiškinys.`]); }
     const open = (s, c) => s > 0 ? `${terms([[1, X], [-c, '']])}` : `${MINUS}(${terms([[1, X], [-c, '']])})`;
     return { q: `Kai ${mm(cond)}, reiškinys ${mm(expr)} lygus:`, ans: choice(items),
-      steps: [`${mm(terms([[1, X], [-p, '']]))} ${s1 > 0 ? '&gt;' : '&lt;'} 0, ${mm(terms([[1, X], [-r, '']]))} ${s2 > 0 ? '&gt;' : '&lt;'} 0.`, mm(`${expr} = ${open(s1, p)} ${op > 0 ? '+' : MINUS} ${op > 0 ? open(s2, r) : `(${open(s2, r)})`}`), mm(`= ${form(s1, s2)}`)] };
+      steps: [`${mm(terms([[1, X], [-p, '']]))} ${s1 > 0 ? '&gt;' : '&lt;'} 0, ${mm(terms([[1, X], [-r, '']]))} ${s2 > 0 ? '&gt;' : '&lt;'} 0.`, mm(`${expr} = ${open(s1, p)} ${op > 0 && s2 < 0 ? `${MINUS} (${terms([[1, X], [-r, '']])})` : `${op > 0 ? '+' : MINUS} ${op > 0 ? open(s2, r) : `(${open(s2, r)})`}`}`), mm(`= ${form(s1, s2)}`)] };
   },
 });
 
@@ -5887,8 +5887,10 @@ stopic({
       const [d, [A, op, B], vals] = R.pick(SUMEX); const fn = R.pick(['sin', 'cos', 'tg']); const rad = R.chance(0.5); const [v, show] = vals[fn];
       const pm = op === '+' ? 0 : 1; const f = { sin: 'sin', cos: 'cos', tg: 'tg' }[fn];
       const eA = exactD('sin', A), eAc = exactD('cos', A), eB = exactD('sin', B), eBc = exactD('cos', B);
-      const mid = fn === 'tg' ? `${M.f(`${exactD('tg', A).html} ${op === '+' ? '+' : MINUS} ${exactD('tg', B).html}`, `1 ${op === '+' ? MINUS : '+'} ${exactD('tg', A).html} · ${exactD('tg', B).html}`)}`
-        : fn === 'sin' ? `${eA.html} · ${eBc.html} ${op === '+' ? '+' : MINUS} ${eAc.html} · ${eB.html}` : `${eAc.html} · ${eBc.html} ${op === '+' ? MINUS : '+'} ${eA.html} · ${eB.html}`;
+      const pr = (h) => /^\s*[−-]/.test(h.replace(/<[^>]+>/g, '')) ? `(${h})` : h;   // a negative value after a sign or · goes in brackets
+      const tA = exactD('tg', A).html, tB = exactD('tg', B).html;
+      const mid = fn === 'tg' ? `${M.f(`${tA} ${op === '+' ? '+' : MINUS} ${pr(tB)}`, `1 ${op === '+' ? MINUS : '+'} ${pr(tA)} · ${pr(tB)}`)}`
+        : fn === 'sin' ? `${eA.html} · ${pr(eBc.html)} ${op === '+' ? '+' : MINUS} ${pr(eAc.html)} · ${pr(eB.html)}` : `${eAc.html} · ${pr(eBc.html)} ${op === '+' ? MINUS : '+'} ${pr(eA.html)} · ${pr(eB.html)}`;
       const naive = fn === 'tg' ? exactD('tg', A).v + (op === '+' ? 1 : -1) * exactD('tg', B).v : exactD(fn, A).v + (op === '+' ? 1 : -1) * exactD(fn, B).v;
       return { q: `Apskaičiuok tikslią reikšmę: ${mm(`${f} ${angH(d, rad)}`)}. <span class="note">Rašyk, pvz., <code>(√6 + √2)/4</code>.</span>`, qp: mm(`${f} ${angH(d, rad)}`), ans: { t: 'num', v, show },
         steps: [`${mm(`${angH(d, rad)} = ${angH(A, rad)} ${op === '+' ? '+' : MINUS} ${angH(B, rad)}`)}; taikome ${mm(`${f}(α ${op === '+' ? '+' : MINUS} β) = ${ADDF[fn][pm]}`)}.`, mm(`${f} ${angH(d, rad)} = ${mid}`), mm(`= ${show}`)],
@@ -6657,7 +6659,9 @@ const shPowB = { k: 'pow', lvl: 1, w: 3, head: 'Rask funkcijų išvestines:', ge
   const sgn = (c, first) => (c < 0 ? (first ? MINUS : ` ${MINUS} `) : first ? '' : ' + ');
   const cf = (c) => Math.abs(c) === 1 ? '' : String(Math.abs(c));
   const h = parts.map((p, i) => sgn(p.c, !i) + (p.kind === 'p' ? `${cf(p.c)}${X}<sup>${p.n}</sup>` : p.kind === 'neg' ? M.f(Math.abs(p.c), p.n === 1 ? X : `${X}<sup>${p.n}</sup>`) : p.kind === 'sqrt' ? `${cf(p.c)}${M.sq(X)}` : String(Math.abs(p.c)))).join('');
-  const d = parts.map(p => p.kind === 'p' ? `(${p.c * p.n})*x^${p.n - 1}` : p.kind === 'neg' ? `(${-p.c * p.n})/x^${p.n + 1}` : p.kind === 'sqrt' ? `(${p.c})/(2*sqrt(x))` : '0').join('+');
+  // each term's sign in front of it ("… − 4/(2√x)", not "… + −4/(2√x)"); constants differentiate to nothing
+  const dt = parts.filter(p => p.kind !== 'c').map(p => p.kind === 'p' ? [p.c * p.n, `*x^${p.n - 1}`] : p.kind === 'neg' ? [-p.c * p.n, `/x^${p.n + 1}`] : [p.c, '/(2*sqrt(x))']);
+  const d = dt.map(([k, b], i) => `${k < 0 ? '-' : i ? '+' : ''}${Math.abs(k)}${b}`).join('') || '0';
   const show = astHTML(parseExpr(d.replace(/\+0$/, '').replace(/^0\+/, '') || '0'));
   return { q: `Rask funkcijos ${mm(`${FXA} = ${h}`)} išvestinę.`, qp: mm(`${FXA} = ${h}`), ans: { t: 'expr', v: d, show: mm(show), domain: [0.4, 3] },
     steps: [`Išvestinių formulės: ${mm(`(${X}<sup><i>n</i></sup>)′ = <i>n</i>${X}<sup><i>n</i>${MINUS}1</sup>`)}, ${mm(`(${M.f(1, `${X}<sup><i>n</i></sup>`)})′ = ${MINUS}${M.f('<i>n</i>', `${X}<sup><i>n</i>+1</sup>`)}`)}, ${mm(`(${M.sq(X)})′ = ${M.f(1, `2${M.sq(X)}`)}`)}, konstantos išvestinė 0.`, `${mm(`${FPXA} = ${show}`)}.`],
