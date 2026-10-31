@@ -13767,6 +13767,9 @@ const VIZ = (function () {
     try { const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), ms); const r = await fetch(`${ENGINE_URL}/api/v1/${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: ctl.signal }); clearTimeout(tm); return r.ok ? await r.json() : null; } catch (e) { return null; }
   }
   const REMOTE_OFF = 'Šios temos uždavinius kuria ir tikrina serveris, o jis dabar nepasiekiamas. Pamoka veikia — užduotis pabandyk vėliau.';
+  const REMOTE_SLOW = 45000;   // a sleeping hosted server takes up to a minute to wake: pack tasks may wait that long
+  // wake the server as soon as the page opens, so it is up by the time the student reaches the tasks
+  if (ENGINE_URL) try { fetch(`${ENGINE_URL}/api/v1/health`).catch(() => {}); } catch (e) { /* offline */ }
   /** a Topic Pack task as the server sends it → the page's task (no answer, no steps until an attempt) */
   const remoteTask = (r, topic) => ({ q: r.q, ans: { t: r.type || 'num', unit: r.unit || undefined, vars: r.vars, opts: r.options }, remote: true, token: r.token, nsteps: r.nsteps, steps: [], lines: !!r.lines, ph: r.ph || '', topic, srv: r });
   /** a task for a worksheet or an example: Topic Packs (and course shapes built on them) give a placeholder the page fills
@@ -13777,7 +13780,7 @@ const VIZ = (function () {
     return makeTask(tp, opts);
   }
   async function fetchRemote(pend) {   // a pack task (a course shape's filter may ask for a few tries)
-    for (let i = 0; i < (pend.ok ? 6 : 1); i++) { const r = await engineApi('pack/task', { topic: pend.topic }); if (!r) return null; if (!pend.ok || pend.ok({ q: r.q })) return r; }
+    for (let i = 0; i < (pend.ok ? 6 : 1); i++) { const r = await engineApi('pack/task', { topic: pend.topic }, REMOTE_SLOW); if (!r) return null; if (!pend.ok || pend.ok({ q: r.q })) return r; }
     return null;
   }
   /** an anonymous random key for the student's own problems (the server keeps only its hash) */
@@ -14065,7 +14068,7 @@ const VIZ = (function () {
       for (const lv of levelsOf(pool)) { const es = R.shuffle(pool.filter(e => e.lvl === lv)); for (const e of es) { if (list.length >= 3 && lv > 1) break; try { const t = taskFor(e.tp, { shape: e.shape }); t.lvl = t.lvl || e.lvl; list.push(t); break; } catch (er) { /* next */ } } }
       if (list.length < 3 && pool.length) for (const e of R.shuffle(pool)) { if (list.length >= 3) break; try { list.push(taskFor(e.tp, { shape: e.shape })); } catch (er) { /* skip */ } }
       const ex = state.ex = { id: L.id, list, i: 0, shown: 0 };
-      list.forEach((t, k) => { if (!t.pending) return; engineApi('pack/examples', { topic: t.pending.topic, n: 3 }).then(got => {
+      list.forEach((t, k) => { if (!t.pending) return; engineApi('pack/examples', { topic: t.pending.topic, n: 3 }, REMOTE_SLOW).then(got => {
         const pick = (got || []).find(x => !t.pending.ok || t.pending.ok({ q: x.q })) || (got || [])[0];
         list[k] = pick ? { q: pick.q, steps: pick.steps, ans: { t: 'num', show: pick.answer }, mistakes: pick.mistakes.map(m => ({ vh: m.value, why: m.why })), lvl: t.lvl } : { q: `<p class="muted">${REMOTE_OFF}</p>`, steps: [], ans: { t: 'num', show: '—' }, lvl: t.lvl, off: true };
         if (state.ex === ex && state.view === 'examples') renderExamples(L);
@@ -14178,6 +14181,7 @@ const VIZ = (function () {
     box.querySelectorAll('[data-sheet]').forEach(b => b.addEventListener('click', () => { const k = b.dataset.sheet; if (W.cur.kind !== k) { W.cur = { kind: k, seed: newSeed(), res: {} }; save(); } renderWorksheet(); }));
     state.ws.items.forEach(ex => ex.parts.forEach(p => bindPart(p.key)));
     updateBar(); VIZ.mount(box); fillRemote(L, cur);
+    if (!box.dataset.retry) { box.dataset.retry = 1; box.addEventListener('click', (e) => { if (e.target.closest('[data-retry]')) { state.remoteDown = false; renderWorksheet(); } }); }
   }
   /** pack parts: the task stored with this sheet, or a new one from the server */
   function fillRemote(L, cur) {
@@ -14201,7 +14205,7 @@ const VIZ = (function () {
   }
   function partHTML(p, label, multi, noHints) {
     const t = p.t, r = (curWs().res || {})[p.key]; const qh = multi && t.qp ? t.qp : t.q;
-    if (t.pending) return `<div class="part" data-k="${p.key}" data-st="wait"><div class="pq">${label ? `<span class="pl">${label}</span>` : ''}<span class="muted">${t.off ? REMOTE_OFF : 'Kraunama užduotis…'}</span></div></div>`;
+    if (t.pending) return `<div class="part" data-k="${p.key}" data-st="wait"><div class="pq">${label ? `<span class="pl">${label}</span>` : ''}<span class="muted">${t.off ? `${REMOTE_OFF} <button type="button" class="linkbtn" data-retry>Bandyti dar kartą</button>` : 'Kraunama užduotis… (jei serveris ilgai nenaudotas, jis bunda iki minutės)'}</span></div></div>`;
     const hint = !noHints && (t.remote ? t.nsteps : (t.steps || []).length) > 1 && !r;
     return `<div class="part" data-k="${p.key}" data-st="${r ? (r.ok ? 'ok' : 'no') : ''}">
       <div class="pq">${label ? `<span class="pl">${label}</span>` : ''}<span>${qh}</span></div>
