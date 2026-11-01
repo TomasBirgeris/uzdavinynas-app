@@ -6689,6 +6689,144 @@ stopic({ id: 'g12b-dapp', g: 12, area: 'A', title: 'Išvestinės taikymas. Funkc
 
 ;
 /* =====================================================================
+   Exam diagnostics (Tomas, 2026-11-01): which topics the VBE (A or B) needs, what each of them rests on — down to
+   grade 5 — and an adaptive diagnostic test that finds where a student's knowledge ends, then a learning plan:
+   first the missing foundations (lower grades), in prerequisite order, then the course's own exam topics.
+   Built from the 2025 VBE papers (I A, I B, II B; % = share of students who solved such a task): docs/EGZAMINAS.md.
+   ===================================================================== */
+
+/** the exam's topics: course 'AB' (both) or 'A' (išplėstinis only); w = how much of the exam rests on it (1–3) */
+const EXAM = [
+  // Skaičiai ir skaičiavimai
+  { id: 'g11-numsets', c: 'AB', w: 1, why: 'aibės ir intervalai (I A 70 %, I B 42–61 %)' },
+  { id: 'g11-setops', c: 'AB', w: 1, why: 'intervalų sąjunga ir sankirta' },
+  { id: 'g11-ratpow', c: 'AB', w: 3, why: 'šaknys ir laipsniai su racionaliuoju rodikliu (I B 50–60 %, II B 13.2 tik 15 %)' },
+  { id: 'g11-rationalize', c: 'AB', w: 2, why: 'iracionalumo panaikinimas vardiklyje (I B 41–52 %)' },
+  { id: 'g11-absval', c: 'AB', w: 2, why: 'modulis su iracionaliais skaičiais, √(a²) = |a| (I B 21–51 %)' },
+  { id: 'g11-log', c: 'AB', w: 3, why: 'logaritmo apibrėžimas ir savybės (A 21-asis — tik 35 %)' },
+  { id: 'g11-compound', c: 'AB', w: 2, why: 'sudėtinės palūkanos ir augimas kartais (II B 18-asis — tik 7 %)' },
+  // Modeliai ir sąryšiai
+  { id: 'g11-powerfunc', c: 'AB', w: 2, why: 'laipsninės ir šaknies funkcijų grafikai' },
+  { id: 'g11-expfunc', c: 'AB', w: 2, why: 'rodiklinės ir logaritminės funkcijų grafikai ir savybės' },
+  { id: 'g11-transform', c: 'AB', w: 2, why: 'grafikų postūmiai, |f(x)|, reikšmių sritis (I B 26–41 %, A 27-asis 45 %)' },
+  { id: 'g11-domain', c: 'AB', w: 2, why: 'apibrėžimo sritis (II B 5-asis — tik 25 %)' },
+  { id: 'g11-parity', c: 'AB', w: 1, why: 'lyginės ir nelyginės, periodinės funkcijos' },
+  { id: 'g11-irreq', c: 'AB', w: 2, why: 'iracionaliosios lygtys' },
+  { id: 'g11-expeq', c: 'AB', w: 2, why: 'rodiklinės lygtys' },
+  { id: 'g11-logeq', c: 'AB', w: 3, why: 'logaritminės lygtys (II B 21-asis — 28 % pilnai)' },
+  { id: 'g12-expineq', c: 'AB', w: 2, why: 'rodiklinės ir logaritminės nelygybės (pagrindas < 1 — tik 21–26 %)' },
+  { id: 'g11-ratineq', c: 'AB', w: 2, why: 'racionaliosios nelygybės (II B 12.2 — tik 15 %)' },
+  { id: 'g9-quad', c: 'AB', w: 2, why: 'kvadratinės lygtys, sandauga lygi 0' },
+  { id: 'g10-rateq', c: 'AB', w: 1, why: 'tekstiniai uždaviniai, sprendžiami racionaliosiomis lygtimis (22–44 %)' },
+  { id: 'g11-arsum', c: 'AB', w: 2, why: 'aritmetinė progresija: n-tasis narys ir suma' },
+  { id: 'g11-geosum', c: 'AB', w: 2, why: 'geometrinė progresija: n-tasis narys ir suma' },
+  { id: 'g11-trig', c: 'AB', w: 3, why: 'vienetinis apskritimas, posūkio kampai (I B 13–50 %, II B 2-asis 44 %)' },
+  { id: 'g11-trigfunc', c: 'AB', w: 2, why: 'trigonometrinių funkcijų grafikai ir periodiškumas' },
+  { id: 'g12-trigid', c: 'AB', w: 2, why: 'trigonometrinės tapatybės (II B 6-asis — tik 20 %, 16.1 — 23 %)' },
+  { id: 'g12-trigeq', c: 'AB', w: 2, why: 'trigonometrinės lygtys (II B 16.2 — tik 13 %)' },
+  { id: 'g12-deriv', c: 'AB', w: 3, why: 'išvestinės skaičiavimas (II B 15.2 — 38 %)' },
+  { id: 'g12-tangent', c: 'AB', w: 1, why: 'liestinė, krypties koeficientas (II B 19-asis — tik 6 %)' },
+  { id: 'g12-monot', c: 'AB', w: 2, why: 'didėjimo ir mažėjimo intervalai' },
+  { id: 'g12-maxmin', c: 'AB', w: 2, why: 'didžiausia ir mažiausia reikšmė' },
+  { id: 'g12-optim', c: 'AB', w: 3, why: 'optimizavimo uždaviniai (II B 15-asis — 4–39 %)' },
+  // Geometrija ir matavimai
+  { id: 'g12-solids', c: 'AB', w: 2, why: 'kūgis, rutulys, piramidė (II B 14-asis — 22–63 %)' },
+  { id: 'g12-stereo', c: 'AB', w: 1, why: 'tiesės ir kampai erdvėje (II B 9-asis — tik 15 %)' },
+  { id: 'g12-dihedral', c: 'AB', w: 2, why: 'dvisieniai kampai (II B 20-asis — tik 7 %)' },
+  // Duomenys ir tikimybės
+  { id: 'g11-prob', c: 'AB', w: 2, why: 'tikimybės, priešingas įvykis (II B 17-asis — 0,2–39 %)' },
+  { id: 'g12-events', c: 'AB', w: 2, why: 'priklausomi įvykiai, traukimas negrąžinant (II B 17.2 — tik 4 %)' },
+  // A course only
+  { id: 'g11-cubes', c: 'A', w: 1, why: 'kubų skirtumas ir suma (A 6-asis 66 %, A 32-asis 16 %)' },
+  { id: 'g9-algfrac', c: 'A', w: 2, why: 'algebrinių trupmenų prastinimas' },
+  { id: 'g11-compose', c: 'A', w: 1, why: 'sudėtinė funkcija, f(x + 1) (A 24-asis — 45 %)' },
+  { id: 'g11-lines', c: 'A', w: 1, why: 'apskritimo lygtis (A 30-asis — 32 %)' },
+  { id: 'g11-arc', c: 'A', w: 1, why: 'arkfunkcijos (A 31-asis — 29 %)' },
+  { id: 'g12-double', c: 'A', w: 2, why: 'sumos ir dvigubo kampo formulės' },
+  { id: 'g12-trigineq', c: 'A', w: 1, why: 'trigonometrinės nelygybės' },
+  { id: 'g12-vectors', c: 'A', w: 2, why: 'skaliarinė sandauga, kampas tarp vektorių (A 16-asis 68 %)' },
+  { id: 'g11-collinear', c: 'A', w: 1, why: 'vektorių veiksmai ir kolinearumas (A 22-asis — 43 %)' },
+  { id: 'g12-drules', c: 'A', w: 2, why: 'sandaugos, dalmens ir sudėtinės funkcijos išvestinė' },
+  { id: 'g12-integral', c: 'A', w: 2, why: 'pirmykštė funkcija ir integralas' },
+  { id: 'g12-area', c: 'A', w: 2, why: 'plotas po kreive' },
+  { id: 'g10-comb', c: 'A', w: 1, why: 'kombinatorika' },
+  { id: 'g12-binom', c: 'A', w: 1, why: 'Niutono binomas' },
+  { id: 'g12-expect', c: 'A', w: 1, why: 'atsitiktinis dydis ir jo vidurkis' },
+];
+
+/** what each topic rests on (its direct prerequisites); everything an exam topic needs, down to grade 5 */
+const PREREQ = {
+  'g5-gcd': ['g5-divis'], 'g5-simplify': ['g5-gcd'], 'g5-fracadd': ['g5-simplify'], 'g5-percent': ['g5-decmul'],
+  'g6-fracmul': ['g5-simplify'], 'g6-intmul': ['g6-intadd'], 'g6-order': ['g6-intmul'], 'g6-ratio': ['g6-fracmul'],
+  'g7-powers': ['g6-order', 'g6-fracmul'], 'g7-eqbr': ['g5-eq', 'g6-intmul', 'g5-fracadd'], 'g7-ineq': ['g7-eqbr'],
+  'g7-dblineq': ['g7-ineq'], 'g7-wordeq': ['g7-eqbr'], 'g7-pchange': ['g5-percent'], 'g7-interest': ['g7-pchange'],
+  'g8-sqrt': ['g7-powers'], 'g8-cbrt': ['g7-powers'], 'g8-expand': ['g7-powers', 'g6-intmul'], 'g8-factor': ['g8-expand'],
+  'g8-complsq': ['g8-expand'], 'g8-pyth': ['g8-sqrt'], 'g8-linfunc': ['g7-eqbr', 'g6-quadrants'], 'g8-vectors': ['g8-pyth'],
+  'g9-quad': ['g8-factor', 'g8-sqrt', 'g7-eqbr'], 'g9-funcval': ['g8-linfunc'], 'g9-recur': ['g9-funcval'],
+  'g9-arith': ['g9-recur', 'g7-eqbr'], 'g9-algfrac': ['g8-factor', 'g5-fracadd', 'g6-fracmul'],
+  'g9-parab': ['g9-quad', 'g9-funcval', 'g8-complsq'], 'g9-trig': ['g8-pyth', 'g6-ratio'],
+  'g10-rateq': ['g9-algfrac', 'g9-quad', 'g7-wordeq'], 'g10-quadineq': ['g9-quad', 'g9-parab', 'g7-ineq'],
+  'g10-unit': ['g9-trig'], 'g10-geomseq': ['g9-recur', 'g7-powers'], 'g10-comb': ['g6-intmul'],
+  'g11-numsets': ['g6-rational'], 'g11-setops': ['g11-numsets', 'g7-dblineq'], 'g11-absval': ['g11-numsets', 'g8-sqrt'],
+  'g11-ratpow': ['g7-powers', 'g8-sqrt', 'g8-cbrt', 'g6-fracmul'], 'g11-rationalize': ['g11-ratpow', 'g8-expand'],
+  'g11-log': ['g11-ratpow'], 'g11-expfunc': ['g11-log', 'g9-funcval'], 'g11-powerfunc': ['g11-ratpow', 'g9-funcval'],
+  'g11-transform': ['g9-parab', 'g11-powerfunc'], 'g11-domain': ['g10-quadineq', 'g9-algfrac', 'g8-sqrt'],
+  'g11-parity': ['g9-funcval', 'g11-trig'], 'g11-irreq': ['g9-quad', 'g11-domain'], 'g11-expeq': ['g11-ratpow', 'g9-quad'],
+  'g11-logeq': ['g11-log', 'g11-domain', 'g9-quad'], 'g11-ratineq': ['g10-quadineq', 'g9-algfrac'],
+  'g11-arsum': ['g9-arith'], 'g11-geosum': ['g10-geomseq'], 'g11-compound': ['g7-interest', 'g10-geomseq', 'g11-ratpow'],
+  'g11-trig': ['g10-unit'], 'g11-arc': ['g11-trig'], 'g11-trigfunc': ['g11-trig', 'g9-funcval'], 'g11-compose': ['g9-funcval'],
+  'g11-cubes': ['g8-expand', 'g8-factor'], 'g11-lines': ['g8-linfunc', 'g8-complsq', 'g8-pyth'], 'g11-collinear': ['g8-vectors'],
+  'g11-prob': ['g10-comb', 'g6-dice', 'g6-fracmul'],
+  'g12-expineq': ['g11-expeq', 'g11-logeq', 'g7-ineq'], 'g12-trigid': ['g11-trig'], 'g12-double': ['g12-trigid'],
+  'g12-trigeq': ['g11-arc', 'g12-trigid'], 'g12-trigineq': ['g12-trigeq', 'g11-trigfunc'],
+  'g12-deriv': ['g7-powers', 'g11-ratpow', 'g9-funcval'], 'g12-drules': ['g12-deriv', 'g11-compose'],
+  'g12-tangent': ['g12-deriv', 'g8-linfunc'], 'g12-monot': ['g12-deriv', 'g10-quadineq'], 'g12-maxmin': ['g12-monot'],
+  'g12-optim': ['g12-maxmin', 'g7-wordeq'], 'g12-integral': ['g12-deriv'], 'g12-area': ['g12-integral'],
+  'g12-vectors': ['g8-vectors', 'g9-trig'], 'g12-solids': ['g8-pyth', 'g8-cylcone'], 'g12-stereo': ['g8-pyth'],
+  'g12-dihedral': ['g12-stereo', 'g9-trig'], 'g12-events': ['g11-prob'], 'g12-binom': ['g10-comb'], 'g12-expect': ['g11-prob'],
+};
+const preOf = (id) => PREREQ[id] || [];
+/** every topic id an id rests on, transitively */
+function preClosure(id, out = new Set()) { for (const p of preOf(id)) if (!out.has(p)) { out.add(p); preClosure(p, out); } return out; }
+
+/** the exam topics of a course ('12A', '12B', '11A', '11B'): its level, and only what that grade has reached */
+function examTopics(courseId) {
+  const lvl = /B$/.test(courseId) ? 'B' : 'A', g = parseInt(courseId, 10) || 12;
+  const tg = (id) => { const t = TOPICS.find(x => x.id === id); return t ? t.g : 99; };
+  return EXAM.filter(e => (e.c === 'AB' || e.c === lvl) && tg(e.id) <= g).sort((a, b) => b.w - a.w || tg(a.id) - tg(b.id)).map(e => e.id);
+}
+
+/* ---------- the diagnostic: pure state, so it can be saved, resumed and tested ----------
+   Start with the exam topics. A right answer: the topic and everything under it count as known (not asked).
+   A wrong answer (or "nežinau"): the topic is a gap, and its prerequisites are asked next — depth first, so the
+   test follows a gap down to where the student's knowledge ends. */
+function diagNew(courseId) { return { course: courseId, queue: examTopics(courseId), known: [], gaps: [], vouched: [], asked: 0, at: Date.now() }; }
+const diagDecided = (S, id) => S.known.includes(id) || S.gaps.includes(id) || S.vouched.includes(id);
+function diagNext(S, can = () => true) {
+  while (S.queue.length) { const id = S.queue[0]; if (diagDecided(S, id) || !can(id)) { S.queue.shift(); continue; } return id; }
+  return null;
+}
+function diagAnswer(S, id, ok) {
+  S.queue = S.queue.filter(x => x !== id); S.asked++;
+  if (ok) { S.known.push(id); for (const p of preClosure(id)) if (!S.known.includes(p) && !S.gaps.includes(p) && !S.vouched.includes(p)) S.vouched.push(p); }
+  else { S.gaps.push(id); S.queue = [...preOf(id).filter(p => !diagDecided(S, p)), ...S.queue]; }
+  return S;
+}
+/** an upper bound on the questions still to come (for the progress bar) */
+const diagLeft = (S) => new Set(S.queue.filter(id => !diagDecided(S, id))).size;
+/** the plan: every gap, prerequisites first (a topic comes after everything it rests on), lower grades first */
+function diagPlan(S) {
+  const gaps = new Set(S.gaps), out = [], seen = new Set();
+  const tg = (id) => { const t = TOPICS.find(x => x.id === id); return t ? t.g : 99; };
+  const visit = (id) => { if (seen.has(id)) return; seen.add(id); for (const p of preOf(id)) if (gaps.has(p)) visit(p); out.push(id); };
+  [...gaps].sort((a, b) => tg(a) - tg(b)).forEach(visit);
+  const g = parseInt(S.course, 10) || 12;
+  return out.map(id => ({ id, base: tg(id) < g - 1 || !EXAM.some(e => e.id === id) }));   // base = a foundation from earlier grades
+}
+
+
+;
+/* =====================================================================
    Courses: what the grade/course picker offers and in which order a student learns.
    12 A and 12 B (and 11 A / 11 B) are separate classes: own chapters (copied from the
    "Horizontai" textbooks), own lessons, own formula sheet (VBE A or B), own progress.
@@ -13923,7 +14061,7 @@ const VIZ = (function () {
      Home: pick a class, then the course's table of contents with reviews due today
      ===================================================================== */
   function goHome() {
-    state.L = null; store.lesson = null; save(); const s = $('#sheet'); const c = course();
+    state.fromPlan = null; state.L = null; store.lesson = null; save(); const s = $('#sheet'); const c = course();
     if (!c) {
       s.innerHTML = `<div class="sheet-head"><div><div class="eyebrow">Sveiki!</div><h2>Kurioje klasėje mokaisi?</h2></div></div>
         <p>${APP.name} — matematikos uždavinynas pagal atnaujintą bendrąją programą ir vadovėlių skyrius. Pasirink klasę (11–12 klasei — ir kursą); vėliau ją galėsi pakeisti viršuje kairėje.</p>
@@ -13937,10 +14075,11 @@ const VIZ = (function () {
       <p class="muted">Kiekviena pamoka: <b>Pamoka</b> (teorija) → <b>Pavyzdžiai</b> → <b>Užduotys</b> (lapai po kelis uždavinius). Išspręsk pamokos lapus — programa pasakys, kada verta pakartoti, kad neužsimirštų.</p>
       ${due.length ? `<div class="duebox"><h4>Šiandien verta pakartoti</h4><div class="sheets">${due.map(L => `<button type="button" data-rev="${L.id}"><b>${L.title}</b><small>trumpas kartojimo lapas · 4 uždaviniai</small></button>`).join('')}</div></div>` : ''}
       ${started.length >= 2 ? `<div class="next-row"><button type="button" class="ghost" id="mixall">↻ Mišrus lapas iš jau mokytų pamokų</button></div>` : ''}
+      ${diagCardHTML(c)}
       <div class="home">${tocHTML(c, true)}</div>
       ${ownBoxHTML()}`;
     s.querySelectorAll('[data-lesson]').forEach(b => b.addEventListener('click', () => openLesson(b.dataset.lesson)));
-    bindOwn(s);
+    bindOwn(s); bindDiagCard(s);
     s.querySelectorAll('[data-rev]').forEach(b => b.addEventListener('click', () => openLesson(b.dataset.rev, 'practice', 'R')));
     const mx = $('#mixall'); if (mx) mx.addEventListener('click', () => { state.mixFrom = started; openLesson(started[0].id, 'practice', 'MIXALL'); });
   }
@@ -14019,6 +14158,71 @@ const VIZ = (function () {
     const r = await fetchRemote(t.pending); return r ? remoteTask(r, t.pending.topic) : null;
   }
 
+  /* ---------- exam diagnostics (txp.js): an adaptive test from the exam's topics down to grade 5, then a plan ---------- */
+  const DIAG_COURSES = ['11A', '11B', '12A', '12B'];
+  const diagOf = (cid) => (store.diag = store.diag || {})[cid] || null;
+  function diagCardHTML(c) {
+    if (!DIAG_COURSES.includes(c.id)) return '';
+    const S = diagOf(c.id); const done = S && S.done;
+    return `<section class="lsec diag-card"><h3>${done ? 'Tavo mokymosi planas' : 'Diagnostinis testas'}</h3>
+      <p class="muted">${done ? `Pagal diagnostiką: ${nN(S.gaps.length, ['tema', 'temos', 'temų'])} pakartoti ar išmokti, pradedant nuo pagrindų.`
+        : `Programa užduos po vieną uždavinį iš kiekvienos egzamino temos. Suklydus — klausimai iš ankstesnių klasių temų, ant kurių ji remiasi. Taip rasime, nuo kur tau verta pradėti.${S ? ` Jau atsakei į ${S.asked}.` : ''}`}</p>
+      <div class="next-row">${done ? '<button type="button" class="primary" data-plan>Atidaryti planą</button><button type="button" class="ghost" data-diag-new>Pakartoti diagnostiką</button>'
+        : `<button type="button" class="primary" data-diag>${S ? 'Tęsti diagnostiką' : 'Pradėti diagnostiką'}</button>`}</div></section>`;
+  }
+  function bindDiagCard(s) {
+    const go = s.querySelector('[data-diag]'); if (go) go.addEventListener('click', () => renderDiag());
+    const pl = s.querySelector('[data-plan]'); if (pl) pl.addEventListener('click', () => renderPlan());
+    const nw = s.querySelector('[data-diag-new]'); if (nw) nw.addEventListener('click', () => { store.diag[course().id] = null; save(); renderDiag(); });
+  }
+  /** a topic the diagnostic can ask now: it exists, and packs need the server */
+  const diagCan = (id) => { const tp = tpOf(id); return !!tp && (!tp.remote || (ENGINE_URL && !state.remoteDown)); };
+  function renderDiag() {
+    const c = course(); state.L = null; store.lesson = null;
+    const S = diagOf(c.id) || (store.diag[c.id] = diagNew(c.id)); save();
+    const s = $('#sheet'); const id = diagNext(S, diagCan);
+    if (!id) { S.done = Date.now(); save(); return renderPlan(); }
+    const left = diagLeft(S), pct = Math.round(100 * S.asked / Math.max(1, S.asked + left));
+    s.innerHTML = `<div class="sheet-head"><div><div class="eyebrow">${c.label} · diagnostika</div><h2>Klausimas ${S.asked + 1}</h2></div><div class="head-actions"><button type="button" class="ghost" data-home>Baigti vėliau</button></div></div>
+      <div class="wsbar"><span>Atsakyta <b>${S.asked}</b></span><span class="pbar" aria-hidden="true"><i style="width:${pct}%"></i></span></div>
+      <p class="muted">Tema: <b>${esc(tpOf(id).title)}</b> (${tpOf(id).g} klasė). Spręsk pats — užuominų nėra. Jei nežinai, kaip spręsti, spausk „Nežinau“: tai irgi naudinga diagnostikai.</p>
+      <div id="diagtask"><p class="muted">Kraunama užduotis…</p></div><div class="next-row" id="diagnext"></div>`;
+    s.querySelector('[data-home]').addEventListener('click', goHome);
+    const answer = (ok) => { diagAnswer(S, id, ok); save(); const nx = $('#diagnext'); nx.innerHTML = '<button type="button" class="primary" data-next>Kitas klausimas →</button>'; nx.querySelector('[data-next]').addEventListener('click', () => { renderDiag(); window.scrollTo({ top: 0 }); }); };
+    lessonTask({ tp: tpOf(id), shape: null, lvl: 1 }).then(t => {
+      if (diagOf(c.id) !== S || !$('#diagtask')) return;
+      if (!t) { state.remoteDown = true; return renderDiag(); }            // the server is off: skip pack topics for now
+      soloTask($('#diagtask'), t, '', apiFor(t), (ok) => answer(ok), { noSteps: true });
+      $('#diagnext').innerHTML = '<button type="button" class="ghost" data-dunno>Nežinau</button>';
+      $('#diagnext [data-dunno]').addEventListener('click', () => { $('#diagtask').querySelectorAll('button, input').forEach(x => { x.disabled = true; }); answer(false); });
+    });
+  }
+  /** the lesson that teaches a topic: in this course, else in the topic's own grade */
+  function lessonForTopic(id) {
+    const has = (L) => L.kind === 'learn' && L.src.some(x => x.id === id || ((tpOf(x.id) || {}).shapes || []).some(sh => sh.src === id));
+    const c = course(); const t = tpOf(id); const lvl = c && /B$/.test(c.id) ? 'B' : 'A';
+    for (const cc of [c, courseById(t && t.g >= 11 ? `${t.g}${lvl}` : String(t && t.g)), ...COURSES]) { if (!cc) continue; const L = courseLessons(cc).find(has); if (L) return L; }
+    return null;
+  }
+  function renderPlan() {
+    const c = course(); const S = diagOf(c.id); if (!S) return goHome();
+    state.L = null; store.lesson = null; save();
+    const plan = diagPlan(S).map(x => ({ ...x, L: lessonForTopic(x.id) })).filter(x => x.L);
+    const doneL = (L) => { const W = store.ws[L.id]; return !!(W && (W.mastered || Object.values(W.done || {}).some(d => d.pass))); };
+    const first = plan.findIndex(x => !doneL(x.L)); const nDone = plan.filter(x => doneL(x.L)).length;
+    const row = (x, i) => `<li><button type="button" class="lbtn" data-pl="${x.L.id}"${i === first ? ' aria-current="true"' : ''}><span>${esc(tpOf(x.id).title)}<span class="lk">${x.base ? `pagrindai · ${tpOf(x.id).g} klasė` : `${c.label} egzamino tema`}</span></span><span class="st ${doneL(x.L) ? 'ok' : i === first ? 'go' : ''}">${doneL(x.L) ? '✓' : i === first ? 'pradėk čia' : `${i + 1}`}</span></button></li>`;
+    const base = plan.filter(x => x.base), own = plan.filter(x => !x.base);
+    $('#sheet').innerHTML = `<div class="sheet-head"><div><div class="eyebrow">${c.label} · pagal diagnostiką</div><h2>Mano mokymosi planas</h2></div><div class="head-actions"><button type="button" class="ghost" data-home>← Turinys</button></div></div>
+      ${plan.length ? `<p class="muted">Diagnostika rado ${nN(S.gaps.length, ['temą', 'temas', 'temų'])}, kurias verta išmokti. Eik iš eilės: kiekviena tema remiasi ankstesnėmis. Tema pažymima ✓, kai įveiki jos lapą. Atlikta: <b>${nDone} iš ${plan.length}</b>.</p>
+        ${base.length ? `<section class="chap"><h3><small>1 žingsnis</small>Pagrindai iš ankstesnių klasių</h3><ol class="llist">${base.map(x => row(x, plan.indexOf(x))).join('')}</ol></section>` : ''}
+        ${own.length ? `<section class="chap"><h3><small>${base.length ? '2 žingsnis' : 'Planas'}</small>Egzamino temos</h3><ol class="llist">${own.map(x => row(x, plan.indexOf(x))).join('')}</ol></section>` : ''}`
+        : '<p>Diagnostika spragų nerado — puiku! Spręsk kurso pamokų lapus ir egzamino lygio (★) uždavinius.</p>'}
+      <div class="next-row"><button type="button" class="ghost" data-diag-new>Pakartoti diagnostiką</button></div>`;
+    $('#sheet').querySelector('[data-home]').addEventListener('click', goHome);
+    $('#sheet').querySelector('[data-diag-new]').addEventListener('click', () => { store.diag[c.id] = null; save(); renderDiag(); });
+    $('#sheet').querySelectorAll('[data-pl]').forEach(b => b.addEventListener('click', () => { state.fromPlan = c.id; openLesson(b.dataset.pl); }));
+  }
+
   /* =====================================================================
      Lesson page: Pamoka · Pavyzdžiai · Užduotys
      ===================================================================== */
@@ -14033,10 +14237,11 @@ const VIZ = (function () {
   }
   function renderLesson() {
     const L = state.L, s = $('#sheet'), tp = mainTopic(L); const v = state.view;
-    s.innerHTML = `<div class="sheet-head"><div><div class="eyebrow">${L.course.label} · ${L.ch.other ? L.ch.title : `${L.ch.n} skyrius · ${L.ch.title}`}</div><h2>${L.title}</h2></div><div class="head-actions">${tBtn(L)}${fBtn()}</div></div>
+    s.innerHTML = `<div class="sheet-head"><div><div class="eyebrow">${L.course.label} · ${L.ch.other ? L.ch.title : `${L.ch.n} skyrius · ${L.ch.title}`}</div><h2>${L.title}</h2></div><div class="head-actions">${state.fromPlan ? '<button type="button" class="ghost" data-backplan>← Mano planas</button>' : ''}${tBtn(L)}${fBtn()}</div></div>
       ${viewsOf(L).length > 1 ? `<nav class="tabs" role="tablist" aria-label="Pamokos dalys">${viewsOf(L).map(([k, name], i) => `<button type="button" role="tab" class="tab" data-v="${k}" aria-selected="${k === v}"><span class="tn">${i + 1}</span>${name}</button>`).join('')}</nav>` : ''}
       <div class="tview" id="tview"></div>`;
     s.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => { state.view = store.view = b.dataset.v; save(); renderLesson(); }));
+    const bp = s.querySelector('[data-backplan]'); if (bp) bp.addEventListener('click', () => { store.course = state.fromPlan; state.fromPlan = null; save(); renderHeader(); renderPlan(); });
     const box = $('#tview');
     if (v === 'learn') renderLearn(L, tp, box);
     if (v === 'examples') renderExamples(L);
