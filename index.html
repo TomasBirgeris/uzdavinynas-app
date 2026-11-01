@@ -681,6 +681,46 @@ body { background: var(--paper); background-image: radial-gradient(1200px 400px 
 .tl-step.done .tl-card b { color: var(--ink-2); }
 .tl-card:hover { border-color: var(--pen); transform: translateY(-1px); }
 @media (prefers-reduced-motion: no-preference) { .tl-step.cur .tl-dot { animation: tlpulse 1.8s ease-in-out infinite; } @keyframes tlpulse { 50% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--pen) 12%, transparent); } } }
+.chat { display: flex; flex-direction: column; gap: 10px; min-height: 60vh; }
+.msg { display: flex; gap: 8px; max-width: 100%; }
+.msg .bub { padding: 10px 14px; border-radius: 16px; line-height: 1.45; max-width: 34rem; }
+.msg.bot .bub { background: var(--pen-soft); border-top-left-radius: 4px; }
+.msg.me { justify-content: flex-end; }
+.msg.me .bub { background: linear-gradient(135deg, var(--pen), var(--pen-2)); color: var(--sheet); border-top-right-radius: 4px; }
+.msg .av, .askp-h .av { flex: none; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: linear-gradient(135deg, var(--pen), var(--pen-2)); color: var(--sheet); font-weight: 800; }
+.msg.card { margin-left: 40px; }
+@media (prefers-reduced-motion: no-preference) { .msg { animation: msgin .25s ease-out; } @keyframes msgin { from { opacity: 0; transform: translateY(6px); } } }
+.opts { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.opts button:not(.primary) { border: 1px solid var(--pen); color: var(--pen); background: var(--sheet); border-radius: 999px; padding: 7px 14px; font-weight: 600; text-align: left; }
+.opts button small { display: block; font-weight: 500; font-size: .75rem; color: var(--ink-3); }
+.opts button[aria-pressed="true"] { background: var(--pen); color: var(--sheet); }
+.opts button[aria-pressed="true"] small { color: inherit; }
+.opts .primary { border-radius: 999px; }
+.auth { display: grid; gap: 10px; width: min(100%, 22rem); padding: 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--sheet); box-shadow: var(--shadow); }
+.auth label { display: grid; gap: 4px; font-weight: 600; font-size: .9rem; }
+.auth input { font: inherit; padding: 9px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--sheet); color: var(--ink); }
+.auth input:focus { outline: none; border-color: var(--pen); box-shadow: var(--ring); }
+.auth-err { color: var(--red); font-size: .9rem; } .auth-err:empty { display: none; }
+.auth .small { font-size: .8rem; margin: 0; }
+.seg2 { display: flex; background: var(--paper); border-radius: 999px; padding: 3px; }
+.seg2 button { flex: 1; border: 0; background: none; border-radius: 999px; padding: 6px 10px; font-weight: 600; color: var(--ink-2); }
+.seg2 button[aria-pressed="true"] { background: var(--sheet); color: var(--pen); box-shadow: var(--shadow); }
+.now .now-h { display: grid; margin-bottom: 8px; } .now .now-h small { color: var(--ink-3); text-transform: uppercase; letter-spacing: .04em; font-size: .72rem; font-weight: 700; }
+.acct { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 4px 2px 10px; font-size: .92rem; }
+.askfab { position: fixed; right: 16px; bottom: 16px; z-index: 20; border: 0; border-radius: 999px; padding: 12px 18px; font-weight: 700; color: var(--sheet); background: linear-gradient(135deg, var(--pen), var(--pen-2)); box-shadow: var(--shadow-lift); }
+.askfab span { font-weight: 800; margin-right: 4px; }
+.askp { position: fixed; right: 16px; bottom: 16px; z-index: 30; width: min(420px, calc(100vw - 32px)); height: min(620px, calc(100vh - 32px)); display: flex; flex-direction: column; background: var(--sheet); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow-lift); overflow: hidden; }
+.askp[hidden] { display: none; }
+.askp-h { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.askp-h b { flex: 1; } .askp .av { width: 28px; height: 28px; }
+.askp-log { flex: 1; overflow-y: auto; padding: 12px; min-height: 0; }
+.askp-log .bub { font-size: .95rem; } .askp-log .bub ol, .askp-log .bub ul { margin: 6px 0 0; padding-left: 1.2em; }
+.askp-ready { padding: 6px 12px; justify-content: flex-start; } .askp-ready button { font-size: .85rem; padding: 5px 11px !important; }
+.askp-f { display: flex; gap: 6px; padding: 10px 12px; border-top: 1px solid var(--line); }
+.askp-f input { flex: 1; min-width: 0; font: inherit; padding: 9px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--sheet); color: var(--ink); }
+.askp-f input:focus { outline: none; border-color: var(--pen); box-shadow: var(--ring); }
+.askp-f .primary { border-radius: 999px; padding: 9px 14px; }
+@media (max-width: 600px) { .askp { right: 0; bottom: 0; width: 100vw; height: 85vh; border-radius: 18px 18px 0 0; } }
 </style>
 
 <header class="top"><div class="top-in">
@@ -3271,9 +3311,9 @@ topic({
   gen() {
     const type = R.int(0, 2);
     if (type === 0) { const a1 = R.int(-10, 15), d = R.nz(-4, 6), n = R.int(8, 30); const an = a1 + (n - 1) * d; const S = (a1 + an) * n / 2;
-      return { q: `Aritmetinės progresijos ${mm(`a<sub>1</sub> = ${fmtNum(a1)}`)}, ${mm(`d = ${fmtNum(d)}`)}. Rask pirmųjų ${n} narių sumą.`, ans: { t: 'num', v: S }, steps: [mm(`a<sub>${n}</sub> = ${fmtNum(a1)} + ${n - 1} · ${pn(d)} = ${fmtNum(an)}`), mm(`S<sub>${n}</sub> = ${M.f(`${fmtNum(a1)} + ${pn(an)}`, 2)} · ${n} = ${fmtNum(S)}`)], mistakes: [{ v: (a1 + an) * n, why: 'Nepamiršk padalyti iš 2: sumoje yra n/2 porų.' }, { v: (a1 + a1 + n * d) * n / 2, why: `a${n} = a1 + (n − 1)d, ne a1 + nd.` }] }; }
+      return { q: `Aritmetinės progresijos ${mm(`a<sub>1</sub> = ${fmtNum(a1)}`)}, ${mm(`d = ${fmtNum(d)}`)}. Rask pirmųjų ${nN(n, ['nario', 'narių', 'narių'])} sumą.`, ans: { t: 'num', v: S }, steps: [mm(`a<sub>${n}</sub> = ${fmtNum(a1)} + ${n - 1} · ${pn(d)} = ${fmtNum(an)}`), mm(`S<sub>${n}</sub> = ${M.f(`${fmtNum(a1)} + ${pn(an)}`, 2)} · ${n} = ${fmtNum(S)}`)], mistakes: [{ v: (a1 + an) * n, why: 'Nepamiršk padalyti iš 2: sumoje yra n/2 porų.' }, { v: (a1 + a1 + n * d) * n / 2, why: `a${n} = a1 + (n − 1)d, ne a1 + nd.` }] }; }
     if (type === 1) { const n = R.int(10, 60); const odd = R.chance(0.5); const S = odd ? n * n : n * (n + 1);
-      return { q: `Rask pirmųjų ${n} ${odd ? 'nelyginių' : 'lyginių'} natūraliųjų skaičių sumą.`, ans: { t: 'num', v: S }, steps: [`Seka ${odd ? '1; 3; 5; …' : '2; 4; 6; …'}: ${mm(`a<sub>1</sub> = ${odd ? 1 : 2}`)}, ${mm('d = 2')}, ${mm(`a<sub>${n}</sub> = ${odd ? 2 * n - 1 : 2 * n}`)}.`, mm(`S = ${M.f(`${odd ? 1 : 2} + ${odd ? 2 * n - 1 : 2 * n}`, 2)} · ${n} = ${fmtNum(S)}`)], mistakes: [{ v: odd ? n * (2 * n - 1 + 1) : n * (2 * n + 2), why: 'Nepamiršk padalyti iš 2.' }] }; }
+      return { q: `Rask pirmųjų ${n % 10 === 1 && n % 100 !== 11 ? `${n} ${odd ? 'nelyginio' : 'lyginio'} natūraliojo skaičiaus` : `${n} ${odd ? 'nelyginių' : 'lyginių'} natūraliųjų skaičių`} sumą.`, ans: { t: 'num', v: S }, steps: [`Seka ${odd ? '1; 3; 5; …' : '2; 4; 6; …'}: ${mm(`a<sub>1</sub> = ${odd ? 1 : 2}`)}, ${mm('d = 2')}, ${mm(`a<sub>${n}</sub> = ${odd ? 2 * n - 1 : 2 * n}`)}.`, mm(`S = ${M.f(`${odd ? 1 : 2} + ${odd ? 2 * n - 1 : 2 * n}`, 2)} · ${n} = ${fmtNum(S)}`)], mistakes: [{ v: odd ? n * (2 * n - 1 + 1) : n * (2 * n + 2), why: 'Nepamiršk padalyti iš 2.' }] }; }
     const r1 = R.int(10, 25), d = R.int(1, 3), n = R.int(10, 25); const last = r1 + (n - 1) * d; const S = (r1 + last) * n / 2;
     return { q: `Amfiteatre ${nN(n, ['eilė', 'eilės', 'eilių'])}. Pirmoje eilėje ${nN(r1, ['vieta', 'vietos', 'vietų'])}, kiekvienoje kitoje — ${d} ${d === 1 ? 'vieta' : 'vietomis'} daugiau. Kiek vietų amfiteatre?`, ans: { t: 'num', v: S }, steps: [`Paskutinėje eilėje: ${mm(`${r1} + ${n - 1} · ${d} = ${last}`)}.`, mm(`S = ${M.f(`${r1} + ${last}`, 2)} · ${n} = ${fmtNum(S)}`)], mistakes: [{ v: last, why: 'Tai tik paskutinės eilės vietos — reikia visų eilių sumos.' }, { v: (r1 + last) * n, why: 'Nepamiršk padalyti iš 2.' }] };
   },
@@ -3285,7 +3325,7 @@ topic({
 <p>Pavyzdys: 1 + 2 + 4 + … + 2<sup>9</sup> = ${M.m(`${M.f(`1 · (2<sup>10</sup> ${MINUS} 1)`, 1)} = 1023`)}.</p>`,
   gen() {
     if (R.chance(0.6)) { const b1 = R.nz(-4, 5), qq = R.pick([2, 3, -2, 2, 3]), n = R.int(4, 8); const S = b1 * (qq ** n - 1) / (qq - 1);
-      return { q: `Geometrinės progresijos ${mm(`b<sub>1</sub> = ${fmtNum(b1)}`)}, ${mm(`q = ${fmtNum(qq)}`)}. Rask pirmųjų ${n} narių sumą.`, ans: { t: 'num', v: S }, steps: [mm(`S<sub>${n}</sub> = ${M.f(`${fmtNum(b1)} · (${pn(qq)}<sup>${n}</sup> ${MINUS} 1)`, `${fmtNum(qq)} ${MINUS} 1`)} = ${M.f(`${fmtNum(b1)} · ${pn(qq ** n - 1)}`, fmtNum(qq - 1))} = ${fmtNum(S)}`)], mistakes: [{ v: b1 * (qq ** (n - 1) - 1) / (qq - 1), why: 'Formulėje sumai rodiklis yra n, ne n − 1.' }, { v: b1 * qq ** (n - 1), why: `Tai tik ${n}-asis narys, o reikia sumos.` }] }; }
+      return { q: `Geometrinės progresijos ${mm(`b<sub>1</sub> = ${fmtNum(b1)}`)}, ${mm(`q = ${fmtNum(qq)}`)}. Rask pirmųjų ${nN(n, ['nario', 'narių', 'narių'])} sumą.`, ans: { t: 'num', v: S }, steps: [mm(`S<sub>${n}</sub> = ${M.f(`${fmtNum(b1)} · (${pn(qq)}<sup>${n}</sup> ${MINUS} 1)`, `${fmtNum(qq)} ${MINUS} 1`)} = ${M.f(`${fmtNum(b1)} · ${pn(qq ** n - 1)}`, fmtNum(qq - 1))} = ${fmtNum(S)}`)], mistakes: [{ v: b1 * (qq ** (n - 1) - 1) / (qq - 1), why: 'Formulėje sumai rodiklis yra n, ne n − 1.' }, { v: b1 * qq ** (n - 1), why: `Tai tik ${n}-asis narys, o reikia sumos.` }] }; }
     const b1 = R.nz(-9, 12), qq = R.pick([q(1, 2), q(1, 3), q(-1, 2), q(2, 3), q(1, 4), q(-1, 3)]); const S = Q.of(b1).div(Q.of(1).sub(qq));
     const seq = [0, 1, 2].map(k => Q.of(b1).mul(qq.pow(k)));
     return { q: `Rask nykstamosios geometrinės progresijos sumą: ${mm(seq.map(M.q).join('; ') + '; …')}`, ans: { t: 'num', v: S }, steps: [`${mm(`q = ${M.q(seq[1])} : ${M.pb(seq[0])} = ${M.q(qq)}`)}, |q| &lt; 1.`, mm(`S = ${M.f(fmtNum(b1), `1 ${MINUS} ${M.pb(qq)}`)} = ${M.f(fmtNum(b1), M.q(Q.of(1).sub(qq)))} = ${M.q(S)}`)], mistakes: [{ v: Q.of(b1).div(Q.of(1).add(qq)), why: 'Vardiklyje 1 − q (atimame q). Jei q neigiamas, 1 − q > 1.' }] };
@@ -4879,7 +4919,7 @@ topic({
   gen() {
     const r1 = R.int(-7, 7), r2 = R.int(-7, 7), a = R.pick([1, 1, 2, 3, -1, -2]); const b = -a * (r1 + r2), c = a * r1 * r2; const fac = (r) => `(x-(${r}))`;
     const aS = a === 1 ? '' : a === -1 ? '-' : String(a); const v = `${aS}${a === -1 ? '1*' : ''}${fac(r1)}${fac(r2)}`.replace(/^-1\*/, '-');
-    const fx = (r) => r === 0 ? X : `(${terms([[1, X], [-r, '']])})`; const show = `${a === 1 ? '' : a === -1 ? MINUS : fmtNum(a)}${[r1, r2].sort((u, w) => (u === 0 ? -1 : w === 0 ? 1 : 0)).map(fx).join('')}`;
+    const fx = (r) => r === 0 ? X : `(${terms([[1, X], [-r, '']])})`; const show = `${a === 1 ? '' : a === -1 ? MINUS : fmtNum(a)}${r1 === r2 ? `${fx(r1)}<sup>2</sup>` : [r1, r2].sort((u, w) => (u === 0 ? -1 : w === 0 ? 1 : 0)).map(fx).join('')}`;   // a double root: a(x − r)²
     return { q: `Išskaidyk dauginamaisiais: ${mm(poly([a, b, c]))}`, ans: { t: 'expr', v: `${a}*${fac(r1)}*${fac(r2)}`, form: 'factored', inp: `${a === 1 ? '' : a === -1 ? '-' : a}${fac(r1)}${fac(r2)}`, show },
       steps: [`Sprendžiame ${mm(`${poly([a, b, c])} = 0`)}: ${mm(`${X}<sub>1</sub> = ${fmtNum(r1)}`)}, ${mm(`${X}<sub>2</sub> = ${fmtNum(r2)}`)}.`, mm(`${poly([a, b, c])} = ${show}`)],
       mistakes: [...(a !== 1 ? [{ v: `${fac(r1)}*${fac(r2)}`, why: `Nepamiršk koeficiento a = ${fmtNum(a)} priekyje.` }] : []), ...(r1 || r2 ? [{ v: `${a}*(x+(${r1}))*(x+(${r2}))`, why: 'Skliaustuose (x − x₁): sprendinio ženklas keičiasi.' }] : [])] };
@@ -6862,7 +6902,7 @@ function taughtTopics(courseId, months) {
     11th-grade exam) at the course level; both — plus what this year has already taught (by the school calendar) */
 function examTopics(courseId, months = schoolMonths()) {
   const lvl = /B$/.test(courseId) ? 'B' : 'A', g = parseInt(courseId, 10) || 12;
-  const base = g <= 11 ? PUPP : EXAM.filter(e => (e.c === 'AB' || e.c === lvl) && tgOf(e.id) <= 11);
+  const base = g <= 10 ? PUPP.filter(e => tgOf(e.id) < g) : g === 11 ? PUPP : EXAM.filter(e => (e.c === 'AB' || e.c === lvl) && tgOf(e.id) <= 11);   // 10th grade: the PUPP's earlier-grade part
   const ids = [...base.sort((a, b) => b.w - a.w || tgOf(a.id) - tgOf(b.id)).map(e => e.id), ...taughtTopics(courseId, months)];
   return [...new Set(ids)];
 }
@@ -6876,9 +6916,9 @@ const weightOf = (id) => ((EXAM.find(e => e.id === id) || PUPP.find(e => e.id ==
 const DIAG_N = 10, DIAG_MAX = 13;
 const reachOf = (id) => new Set([id, ...preClosure(id)]);
 /** the next best item: covers the most not-yet-covered topics (weighted by the exam weight) */
-function diagPick(courseId, taken, can = () => true, months) {
+function diagPick(courseId, taken, can = () => true, months, weak = []) {
   const covered = new Set(); for (const id of taken) for (const x of reachOf(id)) covered.add(x);
-  const w = weightOf;
+  const w = (id) => weightOf(id) + (weak.some(x => reachOf(id).has(x) && !covered.has(x)) ? 4 : 0);   // what the student called weak is asked first
   let best = null, bestScore = 0;
   for (const id of examTopics(courseId, months)) {
     if (taken.includes(id) || !can(id)) continue;
@@ -6887,13 +6927,13 @@ function diagPick(courseId, taken, can = () => true, months) {
   }
   return best;
 }
-function diagNew(courseId, months = schoolMonths()) { return { v: 3, course: courseId, months, items: [], ans: {}, at: Date.now() }; }
+function diagNew(courseId, months = schoolMonths(), weak = []) { return { v: 3, course: courseId, months, weak, items: [], ans: {}, at: Date.now() }; }
 /** the next item to ask, or null when the test is over */
 function diagNext(S, can = () => true) {
   const open = S.items.find(id => !S.ans[id]); if (open) return open;
   const real = S.items.filter(id => S.ans[id] !== 'skip').length;
   if (real >= DIAG_N || S.items.length >= DIAG_MAX) return null;
-  const id = diagPick(S.course, S.items, can, S.months); if (!id) return null;
+  const id = diagPick(S.course, S.items, can, S.months, S.weak || []); if (!id) return null;
   S.items.push(id); return id;
 }
 /** res: 'ok' | 'no' | 'skip' (not learned yet) */
@@ -13999,6 +14039,14 @@ const VIZ = (function () {
      formulas, answers and steps are not in this page. Override for testing: localStorage['uzdavinynas.engine'] ('' = off). */
   const ENGINE_HOSTED = 'https://uzdavinynas-engine.onrender.com';   // the hosted engine's address; build.js fills it in from UZD_ENGINE_URL (empty = no server)
   const ENGINE_URL = (() => { try { const o = localStorage.getItem('uzdavinynas.engine'); if (o !== null) return o; } catch (e) { /* storage blocked */ } return /^(localhost|127\.0\.0\.1)$/.test(location.hostname) || location.protocol === 'file:' ? 'http://127.0.0.1:8000' : ENGINE_HOSTED; })();
+  /** account calls: the result, or { err } with a Lithuanian message (no timeout: a sleeping free host wakes in up to a minute) */
+  async function accApi(method, path, body) {
+    if (!ENGINE_URL) return { err: 'Serveris nepasiekiamas.' };
+    try {
+      const r = await fetch(`${ENGINE_URL}/api/v1/${path}`, { method, headers: { 'Content-Type': 'application/json', ...(auth ? { Authorization: 'Bearer ' + auth.token } : {}) }, body: body ? JSON.stringify(body) : undefined });
+      const j = await r.json().catch(() => ({})); return r.ok ? j : { err: typeof j.detail === 'string' ? j.detail : 'Nepavyko — pabandyk dar kartą.', status: r.status };
+    } catch (e) { return { err: 'Serveris nepasiekiamas — pabandyk po minutės.' }; }
+  }
   async function engineApi(path, body, ms = 4000) {
     if (!ENGINE_URL) return null;
     try { const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), ms); const r = await fetch(`${ENGINE_URL}/api/v1/${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: ctl.signal }); clearTimeout(tm); return r.ok ? await r.json() : null; } catch (e) { return null; }
@@ -14035,7 +14083,14 @@ const VIZ = (function () {
   let store = { course: null, lesson: null, view: 'learn', p: {}, ws: {}, sh: {}, theme: 'auto' };
   try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s && typeof s === 'object') store = Object.assign(store, s); } catch (e) { /* storage unavailable */ }
   store.ws = store.ws || {}; store.sh = store.sh || {}; store.p = store.p || {};
-  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) { /* ignore */ } };
+  /* ---------- the account (server/accounts.py): a username + password; progress follows the student to any device ---------- */
+  const AUTH_KEY = 'uzdavinynas.auth';
+  let auth = null; try { auth = JSON.parse(localStorage.getItem(AUTH_KEY) || 'null'); } catch (e) { /* storage blocked */ }
+  let syncT = null;
+  const save = () => {
+    try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) { /* ignore */ }
+    if (auth) { clearTimeout(syncT); syncT = setTimeout(() => accApi('PUT', 'me/progress', { store }), 3000); }   // batched: one upload per pause
+  };
   // older versions stored a grade (and course A/B for 11–12)
   if (!courseById(store.course || '')) { const g = store.grade; store.course = g >= 11 ? `${g}${store.course === 'B' ? 'B' : 'A'}` : g ? String(g) : null; if (!courseById(store.course || '')) store.course = null; }
 
@@ -14061,7 +14116,7 @@ const VIZ = (function () {
     const draw = (key) => {
       d.innerHTML = `<div class="fdlg-in"><div class="fdlg-head"><h3>${EXAMF.SHEETS[key].name}</h3><button type="button" class="ghost" data-fclose aria-label="Uždaryti">✕</button></div>
         <div class="fdlg-tabs" role="group" aria-label="Egzaminas">${Object.keys(EXAMF.SHEETS).map(s2 => `<button type="button" data-fs="${s2}" aria-pressed="${s2 === key}">${SHEET_NAME[s2]}</button>`).join('')}</div>
-        <p class="muted">Šias formules gausi egzamine — mokykis jomis naudotis. Kitas reikia žinoti mintinai.</p>${EXAMF.sheetHTML(key)}</div>`;
+        <p class="muted">Šias formules gausi egzamine, kitas — mokykis mintinai.</p>${EXAMF.sheetHTML(key)}</div>`;
       d.querySelector('[data-fclose]').addEventListener('click', () => d.close());
       d.querySelectorAll('[data-fs]').forEach(b => b.addEventListener('click', () => draw(b.dataset.fs)));
     };
@@ -14117,7 +14172,7 @@ const VIZ = (function () {
     const sel = $('#coursesel');
     sel.innerHTML = `${course() ? '' : '<option value="">Pasirink klasę</option>'}${COURSES.map(c => `<option value="${c.id}"${store.course === c.id ? ' selected' : ''}>${c.label}${/[AB]$/.test(c.id) ? (c.id.endsWith('A') ? ' · išplėstinis' : ' · bendrasis') : ''}</option>`).join('')}`;
     $('#brand').innerHTML = `<span>${esc(APP.name)}</span>`;
-    $('#foot').textContent = `${APP.name} ${APP.version}. Visi uždaviniai sugeneruojami ir patikrinami programiškai — kiekvieną kartą nauji skaičiai. Pažanga saugoma tik šioje naršyklėje.`;
+    $('#foot').textContent = `${APP.name} ${APP.version}`;
   }
   $('#coursesel').addEventListener('change', (e) => { store.course = e.target.value; store.lesson = null; save(); renderHeader(); goHome(); });
   $('#brand').addEventListener('click', () => goHome());
@@ -14147,8 +14202,11 @@ const VIZ = (function () {
   function renderDrawer() {
     const c = course(); const d = $('#drawer-in');
     d.innerHTML = `<div class="drawer-h"><b>${c ? c.name : 'Turinys'}</b><button type="button" class="ghost" data-close aria-label="Uždaryti">✕</button></div>
-      <button type="button" class="ghost" data-home>⌂ Pradžia ir kartojimas</button>${c ? roadmapHTML(c, true) + tocHTML(c) : '<p class="muted">Pirmiausia pasirink klasę viršuje.</p>'}`;
-    if (c) bindRoad(d, c);
+      <div class="acct">${auth ? `<span>👤 ${esc(auth.name)}</span><button type="button" class="linkbtn" data-out>Atsijungti</button>` : `<button type="button" class="linkbtn" data-in>Prisijungti / sukurti paskyrą</button>`}</div>
+      <button type="button" class="ghost" data-home>⌂ Pradžia</button>${c ? nowHTML(c) + roadmapHTML(c, true) + tocHTML(c) : ''}`;
+    if (c) { bindRoad(d, c); bindNow(d, c); }
+    const out = d.querySelector('[data-out]'); if (out) out.addEventListener('click', () => { closeDrawer(); if (confirm('Atsijungti? Pažanga lieka paskyroje.')) signOut(); });
+    const inb = d.querySelector('[data-in]'); if (inb) inb.addEventListener('click', () => { closeDrawer(); state.L = null; $('#sheet').innerHTML = '<div class="chat" id="chat"></div>'; authCard(chatBox($('#chat'))); });
     d.querySelector('[data-home]').addEventListener('click', () => { closeDrawer(); goHome(); });
     d.querySelectorAll('[data-lesson]').forEach(b => b.addEventListener('click', () => { closeDrawer(); openLesson(b.dataset.lesson); }));
   }
@@ -14157,6 +14215,7 @@ const VIZ = (function () {
      Home: pick a class, then the course's table of contents with reviews due today
      ===================================================================== */
   function goHome() {
+    const ap = $('#askp'); if (ap) ap.hidden = true;
     state.fromPlan = null; state.L = null; store.lesson = null; save(); const s = $('#sheet'); const c = course();
     if (!c) {
       s.innerHTML = `<div class="sheet-head"><div><div class="eyebrow">Sveiki!</div><h2>Kurioje klasėje mokaisi?</h2></div></div>
@@ -14168,14 +14227,14 @@ const VIZ = (function () {
     const due = courseLessons(c).filter(L => statusOf(L).cls === 'due');
     const started = courseLessons(c).filter(L => L.kind === 'learn' && store.ws[L.id] && Object.keys(store.ws[L.id].done || {}).length);
     s.innerHTML = `<div class="sheet-head"><div><div class="eyebrow">${c.label}${c.sheet && c.sheet !== 'pupp' ? ` · VBE ${c.sheet}` : ''}</div><h2>${c.name}</h2></div><div class="head-actions">${fBtn()}</div></div>
-      <p class="muted">Kiekviena pamoka: <b>Pamoka</b> (teorija) → <b>Pavyzdžiai</b> → <b>Užduotys</b> (lapai po kelis uždavinius). Išspręsk pamokos lapus — programa pasakys, kada verta pakartoti, kad neužsimirštų.</p>
+      ${nowHTML(c)}
       ${due.length ? `<div class="duebox"><h4>Šiandien verta pakartoti</h4><div class="sheets">${due.map(L => `<button type="button" data-rev="${L.id}"><b>${L.title}</b><small>trumpas kartojimo lapas · 4 uždaviniai</small></button>`).join('')}</div></div>` : ''}
       ${started.length >= 2 ? `<div class="next-row"><button type="button" class="ghost" id="mixall">↻ Mišrus lapas iš jau mokytų pamokų</button></div>` : ''}
       ${roadmapHTML(c)}
       <div class="home">${tocHTML(c, true)}</div>
       ${ownBoxHTML()}`;
     s.querySelectorAll('[data-lesson]').forEach(b => b.addEventListener('click', () => openLesson(b.dataset.lesson)));
-    bindOwn(s); bindRoad(s, c);
+    bindOwn(s); bindRoad(s, c); bindNow(s, c);
     s.querySelectorAll('[data-rev]').forEach(b => b.addEventListener('click', () => openLesson(b.dataset.rev, 'practice', 'R')));
     const mx = $('#mixall'); if (mx) mx.addEventListener('click', () => { state.mixFrom = started; openLesson(started[0].id, 'practice', 'MIXALL'); });
   }
@@ -14185,7 +14244,7 @@ const VIZ = (function () {
   function ownBoxHTML() {
     if (!ENGINE_URL) return '';
     return `<section class="lsec own"><h3>Savas uždavinys</h3>
-      <p class="muted">Įrašyk uždavinį taip, kaip jis parašytas vadovėlyje ar namų darbuose. Programa jį atpažins ir išspręs — atsakymą visada apskaičiuoja ir patikrina programa.</p>
+      <p class="muted">Įrašyk uždavinį iš vadovėlio ar namų darbų.</p>
       <form class="ownform" id="ownform"><textarea id="ownq" rows="2" maxlength="300" spellcheck="false" placeholder="pvz. Išspręsk lygtį x^2 − 5x + 6 = 0"></textarea><button class="primary" type="submit">Spręsti</button></form>
       <div id="ownout" aria-live="polite"></div></section>`;
   }
@@ -14224,18 +14283,34 @@ const VIZ = (function () {
       onResult(ok) after a judged answer. Everything is scoped to `out`, so several can be on one page. No hints. */
   function soloTask(out, t, note, api, onResult, opts = {}) {   // opts.noSteps: the caller shows the solution itself
     const choice = t.ans.t === 'choice' && t.ans.opts;
+    let work = false; try { work = !!api.lines && stepsPossible(t); } catch (e) { work = false; }   // the student may write the solution, not only the answer
     out.innerHTML = `${note ? `<div class="why soft">${esc(note)}</div>` : ''}
       <div class="excard"><div class="question">${t.q}</div>
+        ${work ? `<ol class="work">${lineHTML('', 0)}</ol>` : ''}
         ${choice ? `<div class="choices" role="group" aria-label="Atsakymo variantai">${t.ans.opts.map((o, i) => `<button type="button" data-i="${i}">${o}</button>`).join('')}</div>`
           : `<form class="ats solo-form"><label>Ats.</label><div class="inbox"><input class="solo-in" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="${esc(PH[t.ans.t] || '')}">${t.ans.unit ? `<span class="unit">${t.ans.unit}</span>` : ''}</div><button class="primary" type="submit">Tikrinti</button></form><div class="preview"></div>`}
         <div class="pfb solo-fb"></div></div>`;
     const fb = out.querySelector('.solo-fb'); let busy = false;
+    const ol = out.querySelector('.work'); const wls = () => ol ? [...ol.querySelectorAll('.wl')] : [];
+    const wireLine = (inp) => inp.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); const li = document.createElement('li'); li.innerHTML = lineHTML('', wls().length).replace(/^<li>|<\/li>$/g, ''); inp.closest('li').after(li); const ni = li.querySelector('.wl'); wireLine(ni); ni.focus(); }
+      if (e.key === 'Backspace' && !inp.value && wls().length > 1) { e.preventDefault(); const li = inp.closest('li'); const pv = li.previousElementSibling || li.nextElementSibling; li.remove(); const pi = pv && pv.querySelector('.wl'); if (pi) pi.focus(); }
+    });
+    wls().forEach(wireLine);
     const judge = async (input) => {
-      if (busy || !input) return; busy = true; const v = await api.check(input); busy = false;
+      if (busy || !input) return; busy = true;
+      const written = wls().map(i => i.value.trim()).filter(Boolean);
+      const v = await api.check(input, written.length ? written : null); busy = false;
       if (!v) { fb.innerHTML = `<div class="why parse">${REMOTE_OFF}</div>`; return; }
       if (v.status === 'parse' || v.status === 'form') { fb.innerHTML = `<div class="why parse">${v.msg || 'Nepavyko perskaityti atsakymo.'}</div>`; return; }
-      const ok = v.status === 'correct' || v.status === 'soft';
-      fb.innerHTML = `<div class="pv ${ok ? 'ok' : 'no'}"><span class="pen">${ok ? 'Teisingai!' : 'Klaida'}</span></div>${v.msg ? `<div class="why${ok ? ' soft' : ''}">${ok ? '' : '<b>Kas nutiko:</b> '}${v.msg}</div>` : ''}
+      // the lines' verdicts, as on a worksheet: a wrong line makes the task not solved
+      const lr = written.length && Array.isArray(v.lines) ? v.lines : null; let bad = null;
+      if (lr) { wls().filter(i => i.value.trim()).forEach((inp, k) => { const x = lr[k]; const li = inp.closest('li'); inp.readOnly = true; if (!x) return; li.dataset.st = x.st; li.querySelector('.sl-mark').textContent = MARK[x.st] || ''; li.querySelector('.sl-msg').innerHTML = x.st !== 'ok' ? x.msg : ''; }); const k = lr.findIndex(x => x && x.st === 'bad'); if (k >= 0) bad = { n: k + 1, msg: lr[k].msg }; }
+      wls().forEach(i => { i.readOnly = true; });
+      const answerOk = v.status === 'correct' || v.status === 'soft'; const ok = answerOk && !bad;
+      if (bad) v.msg = answerOk ? `Atsakymas teisingas, bet sprendimo ${bad.n}-oje eilutėje klaida: ${bad.msg}` : `${v.msg ? v.msg + ' ' : ''}Pirmoji klaida sprendime — ${bad.n}-oje eilutėje: ${bad.msg}`;
+      const nOk = lr ? lr.filter(x => x && x.st === 'ok').length : 0;
+      fb.innerHTML = `<div class="pv ${ok ? 'ok' : 'no'}"><span class="pen">${ok ? 'Teisingai!' : answerOk ? 'Klaida sprendime' : 'Klaida'}</span>${ok && nOk ? `<span class="muted">Sprendimas patikrintas: ${nN(nOk, ['eilutė', 'eilutės', 'eilučių'])} ✓</span>` : ''}</div>${v.msg ? `<div class="why${ok ? ' soft' : ''}">${ok ? '' : '<b>Kas nutiko:</b> '}${v.msg}</div>` : ''}
         ${ok || opts.noSteps ? '' : `<div class="right-ans">Teisingas atsakymas: <span class="m">${v.answer}</span></div>`}${opts.noSteps ? '' : `<div class="block"><h4>Sprendimas žingsniais</h4><ol class="steps">${(v.steps || []).map(x => `<li>${x}</li>`).join('')}</ol></div>`}`;
       out.querySelectorAll('.choices button, .solo-form button, .solo-in').forEach(x => { x.disabled = true; });
       if (onResult) onResult(ok, v);
@@ -14245,8 +14320,9 @@ const VIZ = (function () {
     out.querySelectorAll('.choices button').forEach(b => b.addEventListener('click', () => judge(b.dataset.i)));
   }
   /** how a task is judged: packs on the server, page topics here */
-  const apiFor = (t) => t.remote ? { check: (input) => engineApi('pack/check', { token: t.token, input }) }
-    : { check: async (input) => { const r = checkAnswer(t, input); return { status: r.status, msg: r.msg, answer: answerHTML(t), steps: t.steps || [] }; } };
+  const apiFor = (t) => t.remote ? { lines: true, check: (input, lines) => engineApi('pack/check', { token: t.token, input, lines: lines && t.lines ? lines : null }) }
+    : { lines: true, check: async (input, lines) => { const r = checkAnswer(t, input); let lr = null; if (lines && r.status !== 'parse' && r.status !== 'form') { try { lr = STEPS.check(t, lines); } catch (e) { lr = null; } }
+        return { status: r.status, msg: r.msg, answer: answerHTML(t), steps: t.steps || [], lines: lr }; } };
   /** a task of a lesson for a check or an example: generated here, or fetched from the server for packs (null = server off) */
   async function lessonTask(e) {
     let t; try { t = taskFor(e.tp, { shape: e.shape, lvl: e.lvl }); } catch (er) { return null; }
@@ -14255,7 +14331,8 @@ const VIZ = (function () {
   }
 
   /* ---------- exam diagnostics (txp.js): ~10 composite questions → a personal roadmap ---------- */
-  const DIAG_COURSES = ['11A', '11B', '12A', '12B'];
+  const DIAG_COURSES = ['10', '11A', '11B', '12A', '12B'];
+  const examName = (cid) => parseInt(cid, 10) <= 10 ? 'PUPP' : `VBE ${/B$/.test(cid) ? 'B' : 'A'}`;
   const diagOf = (cid) => { const d = (store.diag = store.diag || {})[cid]; return d && d.v === 3 ? d : null; };   // older versions' results are dropped
   /** the lesson that teaches a topic: in this course, else in the topic's own grade */
   function lessonForTopic(id) {
@@ -14272,16 +14349,16 @@ const VIZ = (function () {
     const done = steps.filter(x => lessonDone(x.L)).length; const next = steps.find(x => !lessonDone(x.L)) || null;
     return { S, steps, done, next, pct: steps.length ? Math.round(100 * done / steps.length) : 100 };
   }
-  const STAGES = [['base', 'Pagrindai', 'temos iš ankstesnių klasių, ant kurių remiasi egzaminas'], ['gap', 'Egzamino temos', 'ką pataisyti prieš egzaminą'], ['new', 'Naujos temos', 'ko dar nesimokei — išmoksi kurse']];
+  const STAGES = [['base', 'Pagrindai', 'žinios, ant kurių remiasi egzamino uždaviniai'], ['gap', 'Egzamino temos', 'ką pataisyti prieš egzaminą'], ['new', 'Naujos temos', 'ko dar nesimokei — išmoksi kurse']];
   /** the compact roadmap (home page and the ☰ menu) */
   function roadmapHTML(c, small) {
     if (!DIAG_COURSES.includes(c.id)) return '';
     const R = roadmap(c.id); const S = diagOf(c.id);
-    if (!R) return `<section class="lsec road ${small ? 'road-s' : ''}"><div class="road-h"><span class="road-ic" aria-hidden="true">🧭</span><div><h3>Tavo kelias iki VBE ${/B$/.test(c.id) ? 'B' : 'A'}</h3>
-      <p class="muted">${S ? `Diagnostika pradėta: ${diagCount(S).asked} iš ${diagCount(S).total} klausimų.` : `10 klausimų, kurių kiekvienas tikrina kelias temas iš karto: ${parseInt(c.id, 10) <= 11 ? 'PUPP (10 klasės patikrinimo)' : 'VBE I dalies (11 klasės)'} temos${schoolMonths() ? ` ir tai, ką jau mokėtės šiais metais (${['rugsėjis', 'rugsėjis–spalis', 'rugsėjis–lapkritis', 'rugsėjis–gruodis', 'rugsėjis–sausis', 'rugsėjis–vasaris', 'rugsėjis–kovas', 'rugsėjis–balandis', 'visi metai'][schoolMonths() - 1]})` : ''}. Pagal atsakymus sudarysime tavo asmeninį planą.`}</p></div></div>
+    if (!R) return `<section class="lsec road ${small ? 'road-s' : ''}"><div class="road-h"><span class="road-ic" aria-hidden="true">🧭</span><div><h3>Tavo kelias iki ${examName(c.id)}</h3>
+      <p class="muted">${S ? `Atsakyta ${diagCount(S).asked} iš ${diagCount(S).total}.` : '10 uždavinių · apie 15 min. Po jų — tavo asmeninis planas.'}</p></div></div>
       <div class="next-row"><button type="button" class="primary" data-diag>${S ? 'Tęsti diagnostiką' : 'Pradėti diagnostiką (≈ 15 min)'}</button></div></section>`;
     const n = R.next;
-    return `<section class="lsec road ${small ? 'road-s' : ''}"><div class="road-h"><span class="road-ring" style="--p:${R.pct}" aria-label="Atlikta ${R.pct} %"><b>${R.pct}%</b></span><div><h3>Tavo kelias iki VBE ${/B$/.test(c.id) ? 'B' : 'A'}</h3>
+    return `<section class="lsec road ${small ? 'road-s' : ''}"><div class="road-h"><span class="road-ring" style="--p:${R.pct}" aria-label="Atlikta ${R.pct} %"><b>${R.pct}%</b></span><div><h3>Tavo kelias iki ${examName(c.id)}</h3>
       <p class="muted">${R.done} iš ${R.steps.length} žingsnių${n ? '' : ' — viskas įveikta!'}</p></div></div>
       ${n ? `<button type="button" class="road-next" data-pl="${n.L.id}"><small>Kitas žingsnis · ${STAGES.find(s => s[0] === n.kind)[1]}</small><b>${esc(tpOf(n.id).title)}</b><span aria-hidden="true">→</span></button>` : ''}
       <div class="next-row"><button type="button" class="ghost" data-plan>Visas planas</button></div></section>`;
@@ -14292,20 +14369,30 @@ const VIZ = (function () {
     el.querySelectorAll('.road [data-pl]').forEach(b => b.addEventListener('click', () => { closeDrawer(); state.fromPlan = c.id; openLesson(b.dataset.pl); }));
   }
   const diagCan = (id) => { const tp = tpOf(id); return !!tp && (!tp.remote || (ENGINE_URL && !state.remoteDown)); };
+  /** a diagnostic question: of 10 generated tasks, the most composite one — a typed answer (a choice can be guessed),
+      then the most solution steps — so one question tests the topic and what it rests on, not a one-step drill */
+  async function diagTask(tp) {
+    if (tp.remote) return lessonTask({ tp, shape: null, lvl: 2 });
+    const score = (t) => (t.ans.t === 'choice' ? 0 : 100) + (t.steps || []).length * 10 + Math.min(9, t.q.length / 60);
+    let best = null;
+    for (let i = 0; i < 10; i++) { let t; try { t = taskFor(tp, { lvl: 2 }); } catch (e) { continue; } if (t && t.q && !t.pending && (!best || score(t) > score(best))) best = t; }
+    return best || lessonTask({ tp, shape: null, lvl: 2 });
+  }
   function renderDiag() {
     const c = course(); state.L = null; store.lesson = null;
-    const S = diagOf(c.id) || (store.diag[c.id] = diagNew(c.id)); save();
+    store.diag = store.diag || {};
+    const S = diagOf(c.id) || (store.diag[c.id] = diagNew(c.id, schoolMonths(), (store.profile && store.profile.course === c.id && store.profile.weak) || [])); save();
     const id = diagNext(S, diagCan); save();
     if (!id) { S.done = Date.now(); save(); return renderPlan(); }
     const k = diagCount(S); const s = $('#sheet');
     s.innerHTML = `<div class="sheet-head"><div><div class="eyebrow">${c.label} · diagnostika</div><h2>Klausimas ${k.asked + 1} iš ${k.total}</h2></div><div class="head-actions"><button type="button" class="ghost" data-home>Baigti vėliau</button></div></div>
       <div class="wsbar"><span class="pbar" aria-hidden="true"><i style="width:${Math.round(100 * k.asked / k.total)}%"></i></span></div>
-      <p class="muted">Šis uždavinys tikrina temą <b>${esc(tpOf(id).title)}</b> ir viską, ant ko ji remiasi. Spręsk pats — užuominų nėra.</p>
-      <div id="diagtask"><p class="muted">Kraunama užduotis… (jei serveris ilgai nenaudotas, jis bunda iki minutės)</p></div>
+      <p class="muted">Tema: <b>${esc(tpOf(id).title)}</b></p>
+      <div id="diagtask"><p class="muted">Kraunama…</p></div>
       <div class="next-row" id="diagnext"></div>`;
     s.querySelector('[data-home]').addEventListener('click', goHome);
     const answer = (res) => { diagAnswer(S, id, res); save(); renderDiag(); window.scrollTo({ top: 0 }); };
-    lessonTask({ tp: tpOf(id), shape: null, lvl: 2 }).then(t => {
+    diagTask(tpOf(id)).then(t => {
       if (diagOf(c.id) !== S || !$('#diagtask')) return;
       if (!t) { state.remoteDown = true; S.items = S.items.filter(x => x !== id); save(); return renderDiag(); }   // the server is off: ask another topic
       soloTask($('#diagtask'), t, '', apiFor(t), (ok) => { $('#diagnext').innerHTML = '<button type="button" class="primary" data-next>Kitas klausimas →</button>'; $('#diagnext [data-next]').addEventListener('click', () => answer(ok ? 'ok' : 'no')); }, { noSteps: true });
@@ -14320,18 +14407,182 @@ const VIZ = (function () {
     const nextIdx = R.steps.indexOf(R.next);
     const node = (x) => { const i = R.steps.indexOf(x), d = lessonDone(x.L), cur = i === nextIdx; const t = tpOf(x.id);
       return `<li class="tl-step ${d ? 'done' : cur ? 'cur' : ''}"><span class="tl-dot" aria-hidden="true">${d ? '✓' : i + 1}</span><button type="button" class="tl-card" data-pl="${x.L.id}"${cur ? ' aria-current="step"' : ''}>
-        <b>${esc(t.title)}</b><small>${x.kind === 'base' ? `${t.g} klasė · pasitikrink: jei pamokos patikrinimai lengvi, eik toliau` : x.kind === 'new' ? 'nauja tema — išmoksi kurse' : 'egzamino tema'}</small>${cur ? '<em>Pradėk čia →</em>' : ''}</button></li>`; };
+        <b>${esc(t.title)}</b><small>${x.kind === 'base' ? 'pagrindas' : x.kind === 'new' ? 'nauja tema — išmoksi kurse' : 'egzamino tema'}</small>${cur ? '<em>Pradėk čia →</em>' : ''}</button></li>`; };
     const R2 = diagResult(R.S);
-    $('#sheet').innerHTML = `<div class="sheet-head"><div><div class="eyebrow">${c.label} · asmeninis planas</div><h2>Tavo kelias iki VBE ${/B$/.test(c.id) ? 'B' : 'A'}</h2></div><div class="head-actions"><button type="button" class="ghost" data-home>← Turinys</button></div></div>
+    $('#sheet').innerHTML = `<div class="sheet-head"><div><div class="eyebrow">${c.label} · asmeninis planas</div><h2>Tavo kelias iki ${examName(c.id)}</h2></div><div class="head-actions"><button type="button" class="ghost" data-home>← Turinys</button></div></div>
       <div class="road-sum"><span class="road-ring big" style="--p:${R.pct}"><b>${R.pct}%</b></span><div>
         <p><b>Diagnostika:</b> ${nN(R.S.items.filter(id => R.S.ans[id] === 'ok').length, ['uždavinys', 'uždaviniai', 'uždavinių'])} išspręsta iš ${diagCount(R.S).asked} — tai patvirtina ${nN(R2.known.length, ['temą', 'temas', 'temų'])}.</p>
-        <p class="muted">${R.steps.length ? `Planas — ${nN(R.steps.length, ['žingsnis', 'žingsniai', 'žingsnių'])}. Eik iš eilės: kiekviena tema remiasi ankstesnėmis. Žingsnis pažymimas ✓, kai įveiki pamokos lapą.` : 'Spragų nerasta — puiku! Spręsk kurso lapus ir egzamino lygio (★) uždavinius.'}</p></div></div>
+        <p class="muted">${R.steps.length ? `${nN(R.steps.length, ['žingsnis', 'žingsniai', 'žingsnių'])}, eik iš eilės.` : 'Spragų nerasta — puiku!'}</p></div></div>
       ${STAGES.map(([k, name, sub], si) => { const xs = R.steps.filter(x => x.kind === k); return xs.length ? `<section class="tl-stage"><h3><span class="tl-n">${si + 1}</span>${name}<small>${sub}</small></h3><ol class="tl">${xs.map(node).join('')}</ol></section>` : ''; }).join('')}
       <div class="next-row"><button type="button" class="ghost" data-diag-new>Pakartoti diagnostiką</button></div>`;
     const sh = $('#sheet');
     sh.querySelector('[data-home]').addEventListener('click', goHome);
     sh.querySelector('[data-diag-new]').addEventListener('click', () => { store.diag[c.id] = null; save(); renderDiag(); });
     sh.querySelectorAll('[data-pl]').forEach(b => b.addEventListener('click', () => { state.fromPlan = c.id; openLesson(b.dataset.pl); }));
+  }
+
+  /* ---------- start: account → a short chat (grade, course, what the class studies now, weak topics) → diagnostic ---------- */
+  /** foundation areas a student can name as weak (topic ids; only those that exist count) */
+  const FOUND = [['Trupmenos ir procentai', ['g6-fracmul', 'g7-pchange', 'g6-ratio']], ['Lygtys ir nelygybės', ['g7-eqbr', 'g7-ineq', 'g9-quad', 'g10-quadineq']],
+    ['Reiškiniai ir laipsniai', ['g7-powers', 'g8-expand', 'g8-factor', 'g9-algfrac']], ['Funkcijos ir grafikai', ['g8-linfunc', 'g9-funcval', 'g9-parab']],
+    ['Geometrija', ['g8-pyth', 'g8-similar', 'g9-trig', 'g10-coslaw']], ['Tikimybės ir statistika', ['g6-dice', 'g10-comb', 'g10-stats']]];
+  const chaptersOf = (c) => c.chapters.filter(ch => !ch.other && ch.lessons.some(L => L.kind === 'learn'));
+  const chapterIds = (ch) => [...new Set(ch.lessons.filter(L => L.kind === 'learn').flatMap(L => L.src.map(x => x.id)))];
+  /** the chapter the class is probably on today (by the school calendar) */
+  const guessChapter = (c) => { const chs = chaptersOf(c); return chs[Math.min(chs.length - 1, Math.floor(chs.length * schoolMonths() / 9))] || null; };
+
+  function renderWelcome() {
+    state.L = null; const s = $('#sheet');
+    s.innerHTML = `<div class="chat" id="chat"></div>`;
+    const ch = chatBox($('#chat'));
+    ch.say('Labas! Aš tavo matematikos mokytojas. Išsiaiškinsime, ką jau moki, ir sudarysime planą tik tau.');
+    if (!ENGINE_URL) { ch.after(300, () => startChat(ch)); return; }
+    ch.after(300, () => authCard(ch));
+  }
+  function authCard(ch) {
+    const box = ch.card(`<form class="auth" autocomplete="on">
+        <div class="seg2" role="tablist"><button type="button" data-m="reg" aria-pressed="true">Nauja paskyra</button><button type="button" data-m="in" aria-pressed="false">Prisijungti</button></div>
+        <label>Vartotojo vardas<input name="username" autocomplete="username" autocapitalize="off" spellcheck="false" required minlength="3" maxlength="32" placeholder="pvz. jonas.m"></label>
+        <label>Slaptažodis<input name="password" type="password" autocomplete="new-password" required minlength="8" placeholder="bent 8 simboliai"></label>
+        <div class="auth-err" role="alert"></div>
+        <button class="primary" type="submit">Sukurti paskyrą</button>
+        <button type="button" class="linkbtn" data-skip>Tęsti be paskyros</button>
+        <p class="muted small">El. pašto nereikia. Pažanga saugoma paskyroje.</p></form>`);
+    let mode = 'reg'; const f = box.querySelector('form'); const sub = f.querySelector('.primary'); const err = f.querySelector('.auth-err');
+    f.querySelectorAll('[data-m]').forEach(b => b.addEventListener('click', () => { mode = b.dataset.m; f.querySelectorAll('[data-m]').forEach(x => x.setAttribute('aria-pressed', x === b)); sub.textContent = mode === 'reg' ? 'Sukurti paskyrą' : 'Prisijungti'; f.password.autocomplete = mode === 'reg' ? 'new-password' : 'current-password'; err.textContent = ''; }));
+    f.querySelector('[data-skip]').addEventListener('click', () => { box.remove(); if (store.onboarded) return goHome(); ch.me('Tęsiu be paskyros'); startChat(ch); });
+    f.addEventListener('submit', async (e) => {
+      e.preventDefault(); err.textContent = ''; sub.disabled = true; sub.textContent = 'Jungiamasi…';
+      const r = await accApi('POST', mode === 'reg' ? 'auth/register' : 'auth/login', { name: f.username.value, password: f.password.value });
+      sub.disabled = false; sub.textContent = mode === 'reg' ? 'Sukurti paskyrą' : 'Prisijungti';
+      if (r.err) { err.textContent = r.err; return; }
+      signedIn(r); box.remove(); ch.me(mode === 'reg' ? `Sukūriau paskyrą „${esc(r.name)}“` : `Prisijungiau kaip „${esc(r.name)}“`);
+      if ((r.profile && r.profile.course) || store.onboarded) { ch.say(`Sveikas sugrįžęs, ${esc(r.name)}! Tęsiame ten, kur baigei.`); ch.after(700, () => { store.onboarded = 1; save(); renderHeader(); goHome(); }); }
+      else startChat(ch, r.name);
+    });
+  }
+  /** a sign-in: keep the token; the server's progress wins over this browser's, else this browser's is uploaded */
+  function signedIn(r) {
+    auth = { token: r.token, name: r.name }; try { localStorage.setItem(AUTH_KEY, JSON.stringify(auth)); } catch (e) { /* storage blocked */ }
+    if (r.progress && typeof r.progress === 'object') { const theme = store.theme; store = Object.assign({ p: {}, ws: {}, sh: {} }, r.progress, { theme }); }
+    if (r.profile) store.profile = r.profile;
+    save();
+  }
+  function signOut() { auth = null; try { localStorage.removeItem(AUTH_KEY); localStorage.removeItem(KEY); } catch (e) { /* storage blocked */ } location.reload(); }
+
+  /** the chat: bot bubbles, the student's answers as buttons (echoed as their bubble) */
+  function chatBox(el) {
+    let t = 0; const q = [];
+    const add = (cls, html) => { const d = document.createElement('div'); d.className = 'msg ' + cls; d.innerHTML = html; el.appendChild(d); d.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); return d; };
+    const run = () => { if (t) return; const f = q.shift(); if (!f) return; t = setTimeout(() => { t = 0; f(); run(); }, f.wait); };
+    const later = (wait, f) => { f.wait = wait; q.push(f); run(); };
+    return {
+      say: (html) => later(450, () => add('bot', `<span class="av" aria-hidden="true">∑</span><div class="bub">${html}</div>`)),
+      me: (html) => add('me', `<div class="bub">${html}</div>`),
+      after: (wait, f) => later(wait, f),
+      card: (html) => add('bot card', html),
+      /** options [[value, label, sub?]] → Promise(value) (multi: Promise([values])) */
+      ask: (opts, multi) => new Promise(res => later(250, () => {
+        const d = add('opts', `${opts.map(([v, l, sub]) => `<button type="button" data-v="${esc(v)}"${multi ? ' aria-pressed="false"' : ''}>${l}${sub ? `<small>${sub}</small>` : ''}</button>`).join('')}${multi ? '<button type="button" class="primary" data-done>Toliau</button>' : ''}`);
+        if (!multi) { d.querySelectorAll('[data-v]').forEach(b => b.addEventListener('click', () => { d.remove(); add('me', `<div class="bub">${b.innerHTML.replace(/<small>.*<\/small>/, '')}</div>`); res(b.dataset.v); })); return; }
+        d.querySelectorAll('[data-v]').forEach(b => b.addEventListener('click', () => b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') !== 'true')));
+        d.querySelector('[data-done]').addEventListener('click', () => { const on = [...d.querySelectorAll('[data-v][aria-pressed="true"]')]; d.remove(); add('me', `<div class="bub">${on.length ? on.map(b => b.innerHTML.replace(/<small>.*<\/small>/, '')).join(', ') : 'Nieko ypatingo'}</div>`); res(on.map(b => b.dataset.v)); });
+      })),
+    };
+  }
+  async function startChat(ch, name) {
+    ch.say(`${name ? `Malonu susipažinti, ${esc(name)}! ` : ''}Kurioje klasėje mokaisi?`);
+    const g = +(await ch.ask(Array.from({ length: 12 }, (_, i) => [String(i + 1), `${i + 1}`])));
+    let cid = String(g);
+    if (g >= 11) {
+      ch.say('Kurį kursą renkiesi?');
+      const k = await ch.ask([['A', 'A · išplėstinis'], ['B', 'B · bendrasis'], ['?', 'Dar nežinau']]);
+      if (k === '?') ch.say('Pradėsime nuo B. Kursą galėsi pakeisti viršuje.');
+      cid = `${g}${k === 'A' ? 'A' : 'B'}`;
+    }
+    const c = courseById(cid); store.course = cid; renderHeader();
+    const chs = chaptersOf(c); const guess = guessChapter(c);
+    let cur = null;
+    if (chs.length) {
+      ch.say('Ką dabar mokotės per pamokas?');
+      const v = await ch.ask([...chs.map(x => [String(x.n), x.title, x === guess ? 'turbūt dabar' : '']), ['?', 'Nežinau']]);
+      cur = chs.find(x => String(x.n) === v) || guess;
+    }
+    ch.say('Kas sekasi sunkiau? Pažymėk, ką nori pagerinti.');
+    const areas = [...(g >= 7 ? FOUND : []), ...chs.filter(x => !cur || x.n <= cur.n).map(x => [`ch${x.n}`, x.title])].filter(a => Array.isArray(a[1]) ? a[1].some(tpOf) : true);
+    const picked = await ch.ask(areas.map(a => [Array.isArray(a[1]) ? a[0] : a[0], Array.isArray(a[1]) ? a[0] : a[1]]), true);
+    const weak = [...new Set(picked.flatMap(v => { const f = FOUND.find(a => a[0] === v); if (f) return f[1].filter(tpOf); const x = chs.find(y => `ch${y.n}` === v); return x ? chapterIds(x) : []; }))];
+    store.profile = { course: cid, cur: cur ? cur.n : null, weak, at: Date.now() }; store.onboarded = 1; save();
+    if (auth) accApi('PUT', 'me/profile', { profile: store.profile });
+    const exam = DIAG_COURSES.includes(cid);
+    if (exam) {
+      ch.say(`Siūlau trumpą diagnostiką: 10 uždavinių, apie 15 min. Pagal ją sudarysiu tavo kelią iki ${g >= 11 ? 'VBE' : 'PUPP'}${weak.length ? ', pradedant nuo to, kas sunkiau' : ''}. Kartu mokysimės ir to, ką einate klasėje.`);
+      const a = await ch.ask([['diag', 'Pradėti diagnostiką'], ['later', 'Vėliau']]);
+      if (a === 'diag') { store.diag = store.diag || {}; store.diag[cid] = null; save(); return renderDiag(); }
+    } else if (cur) {
+      ch.say(`Pradėkime nuo „${esc(cur.title)}“.`);
+      const a = await ch.ask([['go', 'Pradėti'], ['home', 'Į turinį']]);
+      if (a === 'go') { const L = cur.lessons.find(x => x.kind === 'learn' && !lessonDone(x)) || cur.lessons[0]; return openLesson(L.id); }
+    }
+    goHome();
+  }
+  /** home: what the class studies now (the school programme goes on beside the plan) */
+  function nowHTML(c) {
+    const P = store.profile; if (!P || P.course !== c.id || !P.cur) return '';
+    const chs = chaptersOf(c); const x = chs.find(y => y.n === P.cur); if (!x) return '';
+    const L = x.lessons.find(y => y.kind === 'learn' && !lessonDone(y)) || x.lessons[0];
+    return `<section class="lsec now"><div class="now-h"><small>Klasėje dabar</small><b>${x.title}</b></div>
+      <button type="button" class="road-next" data-now="${L.id}"><small>Kita pamoka</small><b>${L.title}</b><span aria-hidden="true">→</span></button>
+      ${chs.some(y => y.n > x.n) ? '<button type="button" class="linkbtn" data-nextch>Jau einame kitą skyrių</button>' : ''}</section>`;
+  }
+  function bindNow(el, c) {
+    const b = el.querySelector('[data-now]'); if (b) b.addEventListener('click', () => { closeDrawer(); openLesson(b.dataset.now); });
+    const n = el.querySelector('[data-nextch]'); if (n) n.addEventListener('click', () => { const chs = chaptersOf(c); const i = chs.findIndex(y => y.n === store.profile.cur); store.profile.cur = (chs[i + 1] || chs[i]).n; save(); if (auth) accApi('PUT', 'me/profile', { profile: store.profile }); goHome(); });
+  }
+
+  /* ---------- "Klausk mokytojo": a chat beside every lesson. Ready answers come from the lesson itself (recipe,
+     pitfalls, the rule); a free question goes to the server (ask.py), where Claude explains from this lesson's text only. */
+  const plainOf = (html) => { const d = document.createElement('div'); d.innerHTML = html || ''; d.querySelectorAll('svg, script, style').forEach(x => x.remove()); return d.textContent.replace(/\s+/g, ' ').trim(); };
+  function lessonText(L) {
+    const tp = mainTopic(L); if (!tp) return ''; const Ls = LESSONS[tp.id] || {};
+    const pits = tp.remote ? (tp.pitfalls || []) : pitfallsFor(tp);
+    return [Ls.goal && 'Tikslas: ' + Ls.goal, Ls.why && 'Kodėl: ' + plainOf(Ls.why), 'Teorija: ' + plainOf(tp.theory),
+      Ls.how && 'Kaip spręsti: ' + Ls.how.map((x, i) => `${i + 1}) ${plainOf(x)}`).join(' '), pits.length && 'Dažnos klaidos: ' + pits.map(plainOf).join(' | '),
+      Ls.real && 'Kur pravers: ' + plainOf(Ls.real)].filter(Boolean).join('\n').slice(0, 6000);
+  }
+  /** ready answers: [label, () => html] — no model call */
+  function askReady(L) {
+    const tp = mainTopic(L); if (!tp) return []; const Ls = LESSONS[tp.id] || {}; const pits = (tp.remote ? (tp.pitfalls || []) : pitfallsFor(tp)).slice(0, 4);
+    return [
+      Ls.how && ['Kaip spręsti?', () => `Štai receptas:<ol class="how">${Ls.how.map(x => `<li>${x}</li>`).join('')}</ol>`],
+      pits.length && ['Kur dažniausiai klystama?', () => `Saugokis:<ul class="pits">${pits.map(x => `<li>${x}</li>`).join('')}</ul>`],
+      ['Primink taisyklę', () => `<div class="theory">${tp.theory}</div>`],
+      Ls.real && ['Kam to reikia?', () => Ls.real],
+    ].filter(Boolean);
+  }
+  state.askH = {};
+  function openAsk() {
+    const L = state.L; if (!L) return; let p = $('#askp');
+    if (!p) { p = document.createElement('aside'); p.id = 'askp'; p.className = 'askp'; p.setAttribute('aria-label', 'Klausk mokytojo'); document.body.appendChild(p); }
+    const H = state.askH[L.id] = state.askH[L.id] || [{ who: 'bot', text: `Ko nori paklausti apie „${L.title}“? Klausk bet ko — paaiškinsiu kitaip.` }];
+    p.innerHTML = `<div class="askp-h"><span class="av" aria-hidden="true">∑</span><b>Mokytojas</b><button type="button" class="ghost" data-x aria-label="Uždaryti">✕</button></div>
+      <div class="chat askp-log"></div><div class="opts askp-ready">${askReady(L).map(([l], i) => `<button type="button" data-r="${i}">${l}</button>`).join('')}</div>
+      <form class="askp-f"><input maxlength="400" placeholder="${ENGINE_URL ? 'Tavo klausimas…' : 'Klausimai be interneto neveikia'}"${ENGINE_URL ? '' : ' disabled'} aria-label="Klausimas"><button class="primary" type="submit"${ENGINE_URL ? '' : ' disabled'}>➤</button></form>`;
+    p.hidden = false; const log = p.querySelector('.askp-log');
+    const draw = (m) => { const d = document.createElement('div'); d.className = 'msg ' + (m.who === 'bot' ? 'bot' : 'me'); d.innerHTML = m.who === 'bot' ? `<span class="av" aria-hidden="true">∑</span><div class="bub">${m.html || esc(m.text).replace(/\n/g, '<br>')}</div>` : `<div class="bub">${esc(m.text)}</div>`; log.appendChild(d); log.scrollTop = log.scrollHeight; return d; };
+    H.forEach(draw);
+    p.querySelector('[data-x]').addEventListener('click', () => { p.hidden = true; });
+    const ready = askReady(L);
+    p.querySelectorAll('[data-r]').forEach(b => b.addEventListener('click', () => { const [l, f] = ready[+b.dataset.r]; const html = f(); H.push({ who: 'me', text: l }, { who: 'bot', text: plainOf(html), html }); draw(H[H.length - 2]); draw(H[H.length - 1]); }));
+    const f = p.querySelector('.askp-f'); const inp = f.querySelector('input');
+    f.addEventListener('submit', async (e) => {
+      e.preventDefault(); const q = inp.value.trim(); if (!q) return; inp.value = ''; H.push({ who: 'me', text: q }); draw(H[H.length - 1]);
+      const wait = draw({ who: 'bot', text: '…' }); inp.disabled = true;
+      const r = await accApi('POST', 'ask', { title: L.title, context: lessonText(L), history: H.slice(-9, -1).map(m => ({ who: m.who, text: m.text.slice(0, 800) })), question: q });
+      inp.disabled = false; inp.focus(); wait.remove();
+      const m = r.err ? { who: 'bot', text: r.err } : { who: 'bot', text: r.answer }; if (!r.err) H.push(m); draw(m);
+    });
+    if (!window.matchMedia('(max-width: 860px)').matches) inp.focus();
   }
 
   /* =====================================================================
@@ -14341,18 +14592,20 @@ const VIZ = (function () {
   const viewsOf = (L) => L.kind === 'learn' ? VIEWS : [['practice', 'Užduotys']];
   function openLesson(id, view, sheet) {
     const L = lessonById(id); if (!L) return goHome();
-    if (L.course.id !== store.course) { store.course = L.course.id; renderHeader(); }
+    if (L.course.id !== store.course && !state.fromPlan) { store.course = L.course.id; renderHeader(); }   // a plan step keeps the student's own course (no "5 klasė" in the header)
     state.L = L; state.ex = null; store.lesson = id; state.view = viewsOf(L).some(v => v[0] === view) ? view : viewsOf(L)[0][0]; store.view = state.view;
     if (sheet) { const W = W_(id); if (!W.cur || W.cur.kind !== sheet || Object.keys(W.cur.res || {}).length === Object.keys(W.cur.parts || {}).length) W.cur = { kind: sheet, seed: newSeed(), res: {} }; }
     save(); renderLesson(); window.scrollTo({ top: 0, behavior: 'smooth' });
   }
   function renderLesson() {
     const L = state.L, s = $('#sheet'), tp = mainTopic(L); const v = state.view;
-    s.innerHTML = `<div class="sheet-head"><div><div class="eyebrow">${L.course.label} · ${L.ch.other ? L.ch.title : `${L.ch.n} skyrius · ${L.ch.title}`}</div><h2>${L.title}</h2></div><div class="head-actions">${state.fromPlan ? '<button type="button" class="ghost" data-backplan>← Mano planas</button>' : ''}${tBtn(L)}${fBtn()}</div></div>
+    s.innerHTML = `<div class="sheet-head"><div><div class="eyebrow">${state.fromPlan && L.course.id !== state.fromPlan ? 'Mano planas · pagrindai' : `${L.course.label} · ${L.ch.other ? L.ch.title : `${L.ch.n} skyrius · ${L.ch.title}`}`}</div><h2>${L.title}</h2></div><div class="head-actions">${state.fromPlan ? '<button type="button" class="ghost" data-backplan>← Mano planas</button>' : ''}${tBtn(L)}${fBtn()}</div></div>
       ${viewsOf(L).length > 1 ? `<nav class="tabs" role="tablist" aria-label="Pamokos dalys">${viewsOf(L).map(([k, name], i) => `<button type="button" role="tab" class="tab" data-v="${k}" aria-selected="${k === v}"><span class="tn">${i + 1}</span>${name}</button>`).join('')}</nav>` : ''}
-      <div class="tview" id="tview"></div>`;
+      <div class="tview" id="tview"></div>
+      <button type="button" class="askfab" data-ask><span aria-hidden="true">∑</span> Klausk mokytojo</button>`;
+    s.querySelector('[data-ask]').addEventListener('click', openAsk);
     s.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => { state.view = store.view = b.dataset.v; save(); renderLesson(); }));
-    const bp = s.querySelector('[data-backplan]'); if (bp) bp.addEventListener('click', () => { store.course = state.fromPlan; state.fromPlan = null; save(); renderHeader(); renderPlan(); });
+    const bp = s.querySelector('[data-backplan]'); if (bp) bp.addEventListener('click', () => { store.course = state.fromPlan; save(); renderHeader(); renderPlan(); });
     const box = $('#tview');
     if (v === 'learn') renderLearn(L, tp, box);
     if (v === 'examples') renderExamples(L);
@@ -14376,7 +14629,7 @@ const VIZ = (function () {
       <section class="lsec theory"><h3>${Ls.why ? 'Taisyklė trumpai' : 'Teorija'}</h3>${tp.theory}</section>
       ${more.map(t2 => `<details class="lsec"><summary><b>Dar šioje pamokoje: ${t2.title}</b></summary><div class="theory">${t2.theory}</div></details>`).join('')}
       ${formulasHTML(tp)}
-      ${viz ? `<section class="lsec"><h3>Pažiūrėk ir pabandyk pats</h3><p class="muted">Tempk taškus ir slankiklius — stebėk, kas keičiasi ir kas lieka taip pat.</p>${viz}${tryHTML(tp)}</section>` : ''}`,
+      ${viz ? `<section class="lsec"><h3>Pažiūrėk ir pabandyk pats</h3><p class="muted">Tempk taškus ir slankiklius.</p>${viz}${tryHTML(tp)}</section>` : ''}`,
     `${Ls.how ? `<section class="lsec"><h3>Kaip spręsti</h3><ol class="how">${Ls.how.map(x => `<li>${x}</li>`).join('')}</ol></section>` : ''}
       ${pits.length ? `<section class="lsec"><h3>Dažnos klaidos — saugokis</h3><ul class="pits">${pits.map(x => `<li>${x}</li>`).join('')}</ul></section>` : ''}`,
     `${Ls.real ? `<section class="lsec"><h3>Kur tai pravers</h3><p>${Ls.real}</p></section>` : ''}`];
@@ -14403,7 +14656,7 @@ const VIZ = (function () {
     // one check: a task of the lesson's easiest level; a wrong answer shows why, then a new task (after two tries the lesson goes on)
     const gate = (g, k) => {
       let tries = 0;
-      g.innerHTML = `<section class="lsec gate-box"><h3>Patikrink save ${k}/${GATES}</h3><p class="muted">Išspręsk pats — tik tada atsivers tolesnė pamokos dalis. Užuominų nėra: jei suklysi, paaiškinsime kodėl.</p><div class="gate-task"><p class="muted">Kraunama užduotis…</p></div><div class="next-row gate-next"></div></section>`;
+      g.innerHTML = `<section class="lsec gate-box"><h3>Patikrink save ${k}/${GATES}</h3><p class="muted">Išspręsk — tada atsivers kita dalis.</p><div class="gate-task"><p class="muted">Kraunama užduotis…</p></div><div class="next-row gate-next"></div></section>`;
       const next = async () => {
         const out = g.querySelector('.gate-task'), nx = g.querySelector('.gate-next'); nx.innerHTML = '';
         const t = await lessonTask(R.pick(easy));
@@ -14447,7 +14700,7 @@ const VIZ = (function () {
     const lvName = (x) => x === 3 ? '★ egzamino lygis' : x === 1 ? 'pagrindai' : 'įtvirtinimas';
     box.innerHTML = `
       <div class="exnav" role="group" aria-label="Pavyzdžiai">${E.list.map((x, k) => `<button type="button" data-k="${k}" aria-pressed="${k === E.i}">Pavyzdys ${k + 1} · ${lvName(x.e.lvl)}</button>`).join('')}<button type="button" id="exnew" class="exnew">↻ Kiti pavyzdžiai</button></div>
-      <p class="muted">Pirmiausia išspręsk pats ir įrašyk atsakymą. Sprendimą žingsnis po žingsnio pamatysi tik po to.</p>
+      <p class="muted">Pirmiausia išspręsk pats — sprendimą pamatysi po to.</p>
       <div id="extask"></div><div id="exsol"></div>
       <div class="next-row lesson-next" id="exfoot"></div>`;
     box.querySelectorAll('.exnav [data-k]').forEach(b => b.addEventListener('click', () => { E.i = +b.dataset.k; renderExamples(L); }));
@@ -14465,7 +14718,7 @@ const VIZ = (function () {
       const st = $('#exstep'); if (st) st.addEventListener('click', () => { X.shown++; solution(); });
       foot();
     };
-    if (X.t === undefined) { $('#extask').innerHTML = '<p class="muted">Kraunamas pavyzdys… (jei serveris ilgai nenaudotas, jis bunda iki minutės)</p>'; foot(); return; }
+    if (X.t === undefined) { $('#extask').innerHTML = '<p class="muted">Kraunama…</p>'; foot(); return; }
     if (X.t === null) { $('#extask').innerHTML = `<p class="muted">${REMOTE_OFF}</p>`; foot(); return; }
     if (X.v) { $('#extask').innerHTML = `<div class="excard"><div class="question">${X.t.q}</div><div class="pv ${X.ok ? 'ok' : 'no'}"><span class="pen">${X.ok ? 'Teisingai!' : 'Klaida'}</span></div></div>`; solution(); return; }
     soloTask($('#extask'), X.t, '', apiFor(X.t), (ok, v) => { X.ok = ok; X.v = v; X.shown = 0; solution(); }, { noSteps: true });
@@ -14548,7 +14801,7 @@ const VIZ = (function () {
     cur.parts = {}; state.ws.items.forEach(ex => ex.parts.forEach(p => { cur.parts[p.key] = ex.lvl; }));
     const noHints = L.kind === 'test';
     const doneMark = (k) => W.done && W.done[k] ? (W.done[k].pass ? ' <span class="done">✓</span>' : ` <span class="muted">${W.done[k].c}/${W.done[k].t}</span>`) : '';
-    const intro = cur.kind === 'R' ? 'Kartojimas po kelių dienų padeda neužmiršti: trumpas lapas iš šios ir ankstesnių pamokų.' : cur.kind === 'M' ? (L.kind === 'test' ? 'Savikontrolė: uždaviniai iš visų skyriaus pamokų, be užuominų. Sprendimą ir teisingą atsakymą pamatysi patikrinęs.' : L.kind === 'exam' ? 'Egzamino lygio uždaviniai iš viso skyriaus — kaip VBE.' : 'Visų skyriaus pamokų uždaviniai sumaišyti: pirmiausia reikia atpažinti, kokiu būdu spręsti.') : cur.kind === 'X' ? 'Dažniau parenkami uždaviniai, kuriuose anksčiau suklydai.' : 'Spręsk sąsiuvinyje arba čia: kiekvieną žingsnį rašyk atskiroje eilutėje (Enter — nauja eilutė), atsakymą — eilutėje „Ats.“. Paspaudus „Tikrinti“, patikrinamas ir atsakymas, ir kiekviena eilutė.';
+    const intro = cur.kind === 'R' ? 'Trumpas kartojimas, kad neužsimirštų.' : cur.kind === 'M' ? (L.kind === 'test' ? 'Savikontrolė: viso skyriaus uždaviniai.' : L.kind === 'exam' ? 'Egzamino lygio uždaviniai.' : 'Viso skyriaus uždaviniai — atpažink, kaip spręsti.') : cur.kind === 'X' ? 'Daugiau uždavinių, kuriuose klydai.' : 'Kiekvieną žingsnį — atskiroje eilutėje (Enter), atsakymą — eilutėje „Ats.“.';
     box.innerHTML = `
       ${kinds.length > 1 ? `<div class="sheets" role="group" aria-label="Lapai">${kinds.map(k => `<button type="button" data-sheet="${k}" aria-pressed="${cur.kind === k}"><b>${SHEET_INFO[k][0]}</b>${doneMark(k)}<small>${SHEET_INFO[k][1]}</small></button>`).join('')}</div>` : ''}
       <p class="wsintro">${intro}</p>
@@ -14583,7 +14836,7 @@ const VIZ = (function () {
   }
   function partHTML(p, label, multi, noHints) {
     const t = p.t, r = (curWs().res || {})[p.key]; const qh = multi && t.qp ? t.qp : t.q;
-    if (t.pending) return `<div class="part" data-k="${p.key}" data-st="wait"><div class="pq">${label ? `<span class="pl">${label}</span>` : ''}<span class="muted">${t.off ? `${REMOTE_OFF} <button type="button" class="linkbtn" data-retry>Bandyti dar kartą</button>` : 'Kraunama užduotis… (jei serveris ilgai nenaudotas, jis bunda iki minutės)'}</span></div></div>`;
+    if (t.pending) return `<div class="part" data-k="${p.key}" data-st="wait"><div class="pq">${label ? `<span class="pl">${label}</span>` : ''}<span class="muted">${t.off ? `${REMOTE_OFF} <button type="button" class="linkbtn" data-retry>Bandyti dar kartą</button>` : 'Kraunama…'}</span></div></div>`;
     return `<div class="part" data-k="${p.key}" data-st="${r ? (r.ok ? 'ok' : 'no') : ''}">
       <div class="pq">${label ? `<span class="pl">${label}</span>` : ''}<span>${qh}</span></div>
       ${t.ans.t !== 'choice' || stepsPossible(t) ? `<ol class="work">${(r && r.lines && r.lines.length ? r.lines : ['']).map((v, k) => lineHTML(v, k)).join('')}</ol>` : ''}
@@ -14791,7 +15044,7 @@ const VIZ = (function () {
 
   // boot: the last lesson reopens where the student left it
   applyTheme(); renderHeader();
-  if (store.lesson && lessonById(store.lesson)) openLesson(store.lesson, store.view); else goHome();
+  if (!store.onboarded) renderWelcome(); else if (store.lesson && lessonById(store.lesson)) { if (lessonById(store.lesson).course.id !== store.course && diagOf(store.course)) state.fromPlan = store.course; openLesson(store.lesson, store.view); } else goHome();   // a plan step reopens as a plan step
 })();
 
 </script>
