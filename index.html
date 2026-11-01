@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="Matematikos treniruoklis 1–12 klasei: pamokos, sprendimai žingsniais ir užduotys pagal atnaujintą bendrąją programą.">
 <meta name="robots" content="noindex">
-<!-- Uždavinynas 0.9.0, 2026-10-31 -->
+<!-- Uždavinynas 0.9.0, 2026-11-01 -->
 </head>
 <body>
 <title>Uždavinynas</title>
@@ -13985,26 +13985,38 @@ const VIZ = (function () {
     }
   }
   /** one task solved in place (not a worksheet, not counted in progress): the server judges the answer and gives the steps */
-  function soloTask(out, t, note, api) {
+  /** one task solved in place (not a worksheet, not counted in progress). api.check(input) → { status, msg, answer, steps };
+      onResult(ok) after a judged answer. Everything is scoped to `out`, so several can be on one page. No hints. */
+  function soloTask(out, t, note, api, onResult, opts = {}) {   // opts.noSteps: the caller shows the solution itself
+    const choice = t.ans.t === 'choice' && t.ans.opts;
     out.innerHTML = `${note ? `<div class="why soft">${esc(note)}</div>` : ''}
       <div class="excard"><div class="question">${t.q}</div>
-        <form class="ats" id="ownaform"><label for="ownans">Ats.</label><div class="inbox"><input id="ownans" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="${esc(PH[t.ans.t] || '')}">${t.ans.unit ? `<span class="unit">${t.ans.unit}</span>` : ''}</div><button class="primary" type="submit">Tikrinti</button>${t.nsteps > 1 ? '<button type="button" class="ghost" id="ownhint">Užuomina</button>' : ''}</form>
-        <div id="ownhints" class="why soft" hidden></div><div class="pfb" id="ownfb"></div></div>`;
-    let shown = 0;
-    const hb = $('#ownhint'); if (hb) hb.addEventListener('click', async () => {
-      shown++; const h = await api.hint(shown); if (!h) { shown--; return; }
-      const box = $('#ownhints'); box.hidden = false; box.innerHTML = `<ol class="steps hint-steps">${h.steps.map(x => `<li>${x}</li>`).join('')}</ol>`; if (shown >= t.nsteps - 1) hb.disabled = true;
-    });
-    $('#ownaform').addEventListener('submit', async (e) => {
-      e.preventDefault(); const input = $('#ownans').value.trim(); if (!input) return;
-      const v = await api.check(input), fb = $('#ownfb');
+        ${choice ? `<div class="choices" role="group" aria-label="Atsakymo variantai">${t.ans.opts.map((o, i) => `<button type="button" data-i="${i}">${o}</button>`).join('')}</div>`
+          : `<form class="ats solo-form"><label>Ats.</label><div class="inbox"><input class="solo-in" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="${esc(PH[t.ans.t] || '')}">${t.ans.unit ? `<span class="unit">${t.ans.unit}</span>` : ''}</div><button class="primary" type="submit">Tikrinti</button></form><div class="preview"></div>`}
+        <div class="pfb solo-fb"></div></div>`;
+    const fb = out.querySelector('.solo-fb'); let busy = false;
+    const judge = async (input) => {
+      if (busy || !input) return; busy = true; const v = await api.check(input); busy = false;
       if (!v) { fb.innerHTML = `<div class="why parse">${REMOTE_OFF}</div>`; return; }
-      if (v.status === 'parse' || v.status === 'form') { fb.innerHTML = `<div class="why parse">${esc(v.msg || 'Nepavyko perskaityti atsakymo.')}</div>`; return; }
+      if (v.status === 'parse' || v.status === 'form') { fb.innerHTML = `<div class="why parse">${v.msg || 'Nepavyko perskaityti atsakymo.'}</div>`; return; }
       const ok = v.status === 'correct' || v.status === 'soft';
-      fb.innerHTML = `<div class="pv ${ok ? 'ok' : 'no'}"><span class="pen">${ok ? 'Teisingai!' : 'Klaida'}</span></div>${v.msg ? `<div class="why${ok ? ' soft' : ''}">${v.msg}</div>` : ''}
-        ${ok ? '' : `<div class="right-ans">Teisingas atsakymas: <span class="m">${v.answer}</span></div>`}<div class="block"><h4>Sprendimas žingsniais</h4><ol class="steps">${(v.steps || []).map(x => `<li>${x}</li>`).join('')}</ol></div>`;
-      $('#ownans').readOnly = true; e.target.querySelector('button.primary').disabled = true;
-    });
+      fb.innerHTML = `<div class="pv ${ok ? 'ok' : 'no'}"><span class="pen">${ok ? 'Teisingai!' : 'Klaida'}</span></div>${v.msg ? `<div class="why${ok ? ' soft' : ''}">${ok ? '' : '<b>Kas nutiko:</b> '}${v.msg}</div>` : ''}
+        ${ok || opts.noSteps ? '' : `<div class="right-ans">Teisingas atsakymas: <span class="m">${v.answer}</span></div>`}${opts.noSteps ? '' : `<div class="block"><h4>Sprendimas žingsniais</h4><ol class="steps">${(v.steps || []).map(x => `<li>${x}</li>`).join('')}</ol></div>`}`;
+      out.querySelectorAll('.choices button, .solo-form button, .solo-in').forEach(x => { x.disabled = true; });
+      if (onResult) onResult(ok, v);
+    };
+    const f = out.querySelector('.solo-form');
+    if (f) { const inp = f.querySelector('.solo-in'); inp.addEventListener('input', () => preview(out, t, inp.value)); f.addEventListener('submit', (e) => { e.preventDefault(); judge(inp.value.trim()); }); }
+    out.querySelectorAll('.choices button').forEach(b => b.addEventListener('click', () => judge(b.dataset.i)));
+  }
+  /** how a task is judged: packs on the server, page topics here */
+  const apiFor = (t) => t.remote ? { check: (input) => engineApi('pack/check', { token: t.token, input }) }
+    : { check: async (input) => { const r = checkAnswer(t, input); return { status: r.status, msg: r.msg, answer: answerHTML(t), steps: t.steps || [] }; } };
+  /** a task of a lesson for a check or an example: generated here, or fetched from the server for packs (null = server off) */
+  async function lessonTask(e) {
+    let t; try { t = taskFor(e.tp, { shape: e.shape, lvl: e.lvl }); } catch (er) { return null; }
+    if (!t || !t.pending) return t;
+    const r = await fetchRemote(t.pending); return r ? remoteTask(r, t.pending.topic) : null;
   }
 
   /* =====================================================================
@@ -14026,7 +14038,7 @@ const VIZ = (function () {
       <div class="tview" id="tview"></div>`;
     s.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => { state.view = store.view = b.dataset.v; save(); renderLesson(); }));
     const box = $('#tview');
-    if (v === 'learn') { box.innerHTML = learnHTML(L, tp) + `<div class="next-row lesson-next"><button class="primary" type="button" data-go="examples">Toliau: išspręsti pavyzdžiai →</button><button class="ghost" type="button" data-go="practice">Jau moku — tiesiai į užduotis</button></div>${reportBtn('lesson', 'Pamokoje klaida ar kas neaišku? Pranešk')}`; VIZ.mount(box); }
+    if (v === 'learn') renderLearn(L, tp, box);
     if (v === 'examples') renderExamples(L);
     if (v === 'practice') renderWorksheet();
     box.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => { state.view = store.view = b.dataset.go; save(); renderLesson(); $('#sheet').scrollIntoView({ behavior: 'smooth', block: 'start' }); }));
@@ -14035,22 +14047,62 @@ const VIZ = (function () {
     const T = (VIZ.TRY || {})[tp.id]; if (!T || !T.length) return '';
     return `<div class="vz-try"><h4>Užduotys su brėžiniu</h4><ol>${T.map(([q, a]) => `<li>${q}<details><summary>Ką turėjai pamatyti?</summary><p>${a}</p></details></li>`).join('')}</ol></div>`;
   }
-  function learnHTML(L, tp) {
-    if (!tp) return '<p>Šiai pamokai teorijos nėra.</p>';
+  /** the lesson in three parts: [why + rule + widgets] · [how to solve + pitfalls] · [real use] */
+  function learnParts(L, tp) {
+    if (!tp) return ['<p>Šiai pamokai teorijos nėra.</p>', '', ''];
     const Ls = LESSONS[tp.id] || {};
     const pits = [...new Set([...(Ls.tips || []), ...(tp.remote ? tp.pitfalls : pitfallsFor(tp))])].slice(0, 6);
     const viz = VIZ.html(tp.id);
     const more = L.src.slice(1).map(s => tpOf(s.id)).filter(Boolean);
-    return `
+    return [`
       ${Ls.goal ? `<div class="goal"><b>Ką išmoksi.</b> ${Ls.goal}</div>` : ''}
       ${Ls.why ? `<section class="lsec"><h3>Kodėl taip yra?</h3>${Ls.why}</section>` : ''}
       <section class="lsec theory"><h3>${Ls.why ? 'Taisyklė trumpai' : 'Teorija'}</h3>${tp.theory}</section>
       ${more.map(t2 => `<details class="lsec"><summary><b>Dar šioje pamokoje: ${t2.title}</b></summary><div class="theory">${t2.theory}</div></details>`).join('')}
       ${formulasHTML(tp)}
-      ${viz ? `<section class="lsec"><h3>Pažiūrėk ir pabandyk pats</h3><p class="muted">Tempk taškus ir slankiklius — stebėk, kas keičiasi ir kas lieka taip pat.</p>${viz}${tryHTML(tp)}</section>` : ''}
-      ${Ls.how ? `<section class="lsec"><h3>Kaip spręsti</h3><ol class="how">${Ls.how.map(x => `<li>${x}</li>`).join('')}</ol></section>` : ''}
-      ${pits.length ? `<section class="lsec"><h3>Dažnos klaidos — saugokis</h3><ul class="pits">${pits.map(x => `<li>${x}</li>`).join('')}</ul></section>` : ''}
-      ${Ls.real ? `<section class="lsec"><h3>Kur tai pravers</h3><p>${Ls.real}</p></section>` : ''}`;
+      ${viz ? `<section class="lsec"><h3>Pažiūrėk ir pabandyk pats</h3><p class="muted">Tempk taškus ir slankiklius — stebėk, kas keičiasi ir kas lieka taip pat.</p>${viz}${tryHTML(tp)}</section>` : ''}`,
+    `${Ls.how ? `<section class="lsec"><h3>Kaip spręsti</h3><ol class="how">${Ls.how.map(x => `<li>${x}</li>`).join('')}</ol></section>` : ''}
+      ${pits.length ? `<section class="lsec"><h3>Dažnos klaidos — saugokis</h3><ul class="pits">${pits.map(x => `<li>${x}</li>`).join('')}</ul></section>` : ''}`,
+    `${Ls.real ? `<section class="lsec"><h3>Kur tai pravers</h3><p>${Ls.real}</p></section>` : ''}`];
+  }
+  const GATES = 2;   // checks inside a lesson's theory
+  function renderLearn(L, tp, box) {
+    const [A, B, C] = learnParts(L, tp);
+    const pool = poolOf(L); const easy = pool.filter(e => e.lvl === Math.min(...pool.map(x => x.lvl)));
+    store.learn = store.learn || {}; const passed = () => Math.min(GATES, easy.length ? store.learn[L.id] || 0 : GATES);
+    box.innerHTML = `${A}<div class="gate" data-g="1"></div>
+      <div class="after" data-a="1" hidden>${B}<div class="gate" data-g="2"></div>
+        <div class="after" data-a="2" hidden>${C}<div class="next-row lesson-next"><button class="primary" type="button" data-go="examples">Toliau: išspręsti pavyzdžiai →</button></div>${reportBtn('lesson', 'Pamokoje klaida ar kas neaišku? Pranešk')}</div></div>`;
+    VIZ.mount(box);
+    const show = () => {
+      const n = passed();
+      box.querySelectorAll('.after').forEach(a => { a.hidden = +a.dataset.a > n; });
+      box.querySelectorAll('.gate').forEach(g => {
+        const k = +g.dataset.g;
+        if (k <= n) { if (!g.dataset.done) { g.dataset.done = 1; if (!g.querySelector('.pv')) g.innerHTML = '<p class="muted gate-ok">✓ Patikrinta — gali tęsti.</p>'; } return; }
+        if (k === n + 1 && !g.dataset.open) { g.dataset.open = 1; gate(g, k); }
+      });
+    };
+    const pass = (k) => { store.learn[L.id] = Math.max(store.learn[L.id] || 0, k); save(); show(); };
+    // one check: a task of the lesson's easiest level; a wrong answer shows why, then a new task (after two tries the lesson goes on)
+    const gate = (g, k) => {
+      let tries = 0;
+      g.innerHTML = `<section class="lsec gate-box"><h3>Patikrink save ${k}/${GATES}</h3><p class="muted">Išspręsk pats — tik tada atsivers tolesnė pamokos dalis. Užuominų nėra: jei suklysi, paaiškinsime kodėl.</p><div class="gate-task"><p class="muted">Kraunama užduotis…</p></div><div class="next-row gate-next"></div></section>`;
+      const next = async () => {
+        const out = g.querySelector('.gate-task'), nx = g.querySelector('.gate-next'); nx.innerHTML = '';
+        const t = await lessonTask(R.pick(easy));
+        if (!t) { out.innerHTML = `<p class="muted">${REMOTE_OFF}</p>`; nx.innerHTML = '<button type="button" class="ghost" data-g-again>Bandyti dar kartą</button>'; nx.querySelector('[data-g-again]').addEventListener('click', next); return; }
+        soloTask(out, t, '', apiFor(t), (ok) => {
+          if (ok) return pass(k);
+          tries++;
+          nx.innerHTML = `<button type="button" class="primary" data-g-again>Kitas uždavinys</button>${tries >= 2 ? '<button type="button" class="ghost" data-g-go>Perskaičiau paaiškinimą — tęsti</button>' : ''}`;
+          nx.querySelector('[data-g-again]').addEventListener('click', next);
+          const go = nx.querySelector('[data-g-go]'); if (go) go.addEventListener('click', () => pass(k));
+        });
+      };
+      next();
+    };
+    show();
   }
 
   /* ---------- task pool of a lesson: shapes with levels ---------- */
@@ -14065,40 +14117,43 @@ const VIZ = (function () {
   }
   const levelsOf = (pool) => [...new Set(pool.map(e => e.lvl))].sort();
   /* worked examples: one per level (different shapes), steps revealed one by one */
+  /* worked examples, attempt first (Tomas, 2026-11-01): the student answers; only then the solution opens step by step */
   function renderExamples(L) {
     const box = $('#tview');
     if (!state.ex || state.ex.id !== L.id) {
-      const pool = poolOf(L); const list = [];
-      for (const lv of levelsOf(pool)) { const es = R.shuffle(pool.filter(e => e.lvl === lv)); for (const e of es) { if (list.length >= 3 && lv > 1) break; try { const t = taskFor(e.tp, { shape: e.shape }); t.lvl = t.lvl || e.lvl; list.push(t); break; } catch (er) { /* next */ } } }
-      if (list.length < 3 && pool.length) for (const e of R.shuffle(pool)) { if (list.length >= 3) break; try { list.push(taskFor(e.tp, { shape: e.shape })); } catch (er) { /* skip */ } }
-      const ex = state.ex = { id: L.id, list, i: 0, shown: 0 };
-      list.forEach((t, k) => { if (!t.pending) return; engineApi('pack/examples', { topic: t.pending.topic, n: 3 }, REMOTE_SLOW).then(got => {
-        const pick = (got || []).find(x => !t.pending.ok || t.pending.ok({ q: x.q })) || (got || [])[0];
-        list[k] = pick ? { q: pick.q, steps: pick.steps, ans: { t: 'num', show: pick.answer }, mistakes: pick.mistakes.map(m => ({ vh: m.value, why: m.why })), lvl: t.lvl } : { q: `<p class="muted">${REMOTE_OFF}</p>`, steps: [], ans: { t: 'num', show: '—' }, lvl: t.lvl, off: true };
-        if (state.ex === ex && state.view === 'examples') renderExamples(L);
-      }); });
+      const pool = poolOf(L); const picks = [];
+      for (const lv of levelsOf(pool)) { if (picks.length >= 3) break; const es = R.shuffle(pool.filter(e => e.lvl === lv)); if (es.length) picks.push(es[0]); }
+      for (const e of R.shuffle(pool)) { if (picks.length >= 3) break; if (!picks.includes(e)) picks.push(e); }
+      const ex = state.ex = { id: L.id, list: picks.map(e => ({ e, t: undefined })), i: 0 };
+      ex.list.forEach(x => lessonTask(x.e).then(t => { x.t = t; if (state.ex === ex && state.view === 'examples' && ex.list[ex.i] === x) renderExamples(L); }));
     }
-    const E = state.ex; const t = E.list[E.i]; if (!t) { box.innerHTML = '<p>Pavyzdžių sugeneruoti nepavyko.</p>'; return; }
-    if (t.pending) { box.innerHTML = '<p class="muted">Kraunami pavyzdžiai…</p>'; return; }
-    const steps = t.steps || []; const done = E.shown >= steps.length; const mist = (t.mistakes || []).filter(m => m.why).slice(0, 3);
+    const E = state.ex; const X = E.list[E.i]; if (!X) { box.innerHTML = '<p>Pavyzdžių sugeneruoti nepavyko.</p>'; return; }
     const lvName = (x) => x === 3 ? '★ egzamino lygis' : x === 1 ? 'pagrindai' : 'įtvirtinimas';
     box.innerHTML = `
-      <div class="exnav" role="group" aria-label="Pavyzdžiai">${E.list.map((x, k) => `<button type="button" data-k="${k}" aria-pressed="${k === E.i}">Pavyzdys ${k + 1}${x.lvl ? ` · ${lvName(x.lvl)}` : ''}</button>`).join('')}<button type="button" id="exnew" class="exnew">↻ Kiti pavyzdžiai</button></div>
-      <div class="excard">
-        <div class="question">${t.q}</div>
-        <p class="muted">${E.shown ? '' : 'Pirmiausia pabandyk išspręsti pats (sąsiuvinyje), tada atskleisk sprendimą po vieną žingsnį ir palygink.'}</p>
-        <ol class="steps exsteps">${steps.slice(0, E.shown).map(x => `<li>${x}</li>`).join('')}</ol>
-        ${done ? `<div class="right-ans">Atsakymas: <span class="m">${answerHTML(t)}</span></div>` : ''}
-        <div class="next-row">${done ? '' : `<button type="button" class="primary" id="exstep">${E.shown ? 'Kitas žingsnis' : 'Rodyti pirmą žingsnį'} (${E.shown + 1}/${steps.length})</button><button type="button" class="ghost" id="exall">Rodyti visą sprendimą</button>`}</div>
-        ${done && mist.length ? `<div class="block exmist"><h4>Kur šiame pavyzdyje dažnai suklystama</h4><ul class="pits">${mist.map(m => `<li>Jei gavai <span class="m">${m.vh || valueHTML(t.ans, m.v)}</span> — ${m.why}</li>`).join('')}</ul></div>` : ''}
-      </div>
-      <div class="next-row lesson-next">${E.i + 1 < E.list.length ? `<button type="button" class="${done ? 'primary' : 'ghost'}" id="exnext">Kitas pavyzdys →</button>` : ''}<button type="button" class="${E.i + 1 >= E.list.length && done ? 'primary' : 'ghost'}" data-go="practice">Toliau: užduotys →</button></div>`;
-    box.querySelectorAll('.exnav [data-k]').forEach(b => b.addEventListener('click', () => { E.i = +b.dataset.k; E.shown = 0; renderExamples(L); }));
+      <div class="exnav" role="group" aria-label="Pavyzdžiai">${E.list.map((x, k) => `<button type="button" data-k="${k}" aria-pressed="${k === E.i}">Pavyzdys ${k + 1} · ${lvName(x.e.lvl)}</button>`).join('')}<button type="button" id="exnew" class="exnew">↻ Kiti pavyzdžiai</button></div>
+      <p class="muted">Pirmiausia išspręsk pats ir įrašyk atsakymą. Sprendimą žingsnis po žingsnio pamatysi tik po to.</p>
+      <div id="extask"></div><div id="exsol"></div>
+      <div class="next-row lesson-next" id="exfoot"></div>`;
+    box.querySelectorAll('.exnav [data-k]').forEach(b => b.addEventListener('click', () => { E.i = +b.dataset.k; renderExamples(L); }));
     $('#exnew').addEventListener('click', () => { state.ex = null; renderExamples(L); });
-    const st = $('#exstep'); if (st) st.addEventListener('click', () => { E.shown++; renderExamples(L); });
-    const al = $('#exall'); if (al) al.addEventListener('click', () => { E.shown = steps.length; renderExamples(L); });
-    const en = $('#exnext'); if (en) en.addEventListener('click', () => { E.i++; E.shown = 0; renderExamples(L); box.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
-    box.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => { state.view = store.view = 'practice'; save(); renderLesson(); }));
+    const foot = () => { $('#exfoot').innerHTML = `${E.i + 1 < E.list.length ? `<button type="button" class="${X.v ? 'primary' : 'ghost'}" id="exnext">Kitas pavyzdys →</button>` : ''}${X.v && E.i + 1 >= E.list.length ? '<button type="button" class="primary" data-go="practice">Toliau: užduotys →</button>' : ''}`;
+      const en = $('#exnext'); if (en) en.addEventListener('click', () => { E.i++; renderExamples(L); box.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+      box.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => { state.view = store.view = 'practice'; save(); renderLesson(); })); };
+    // the solution, one step per click, after the attempt
+    const solution = () => {
+      const v = X.v, steps = v.steps || [], done = X.shown >= steps.length;
+      const mist = (X.t.mistakes || []).filter(m => m.why).slice(0, 3);
+      $('#exsol').innerHTML = `<div class="block"><h4>Sprendimas žingsniais</h4><ol class="steps exsteps">${steps.slice(0, X.shown).map(x => `<li>${x}</li>`).join('')}</ol>
+        ${done ? `<div class="right-ans">Atsakymas: <span class="m">${v.answer}</span></div>` : `<div class="next-row"><button type="button" class="primary" id="exstep">${X.shown ? 'Kitas žingsnis' : 'Rodyti pirmą žingsnį'} (${X.shown + 1}/${steps.length})</button></div>`}
+        ${done && mist.length ? `<div class="block exmist"><h4>Kur šiame pavyzdyje dažnai suklystama</h4><ul class="pits">${mist.map(m => `<li>Jei gavai <span class="m">${valueHTML(X.t.ans, m.v)}</span> — ${m.why}</li>`).join('')}</ul></div>` : ''}</div>`;
+      const st = $('#exstep'); if (st) st.addEventListener('click', () => { X.shown++; solution(); });
+      foot();
+    };
+    if (X.t === undefined) { $('#extask').innerHTML = '<p class="muted">Kraunamas pavyzdys… (jei serveris ilgai nenaudotas, jis bunda iki minutės)</p>'; foot(); return; }
+    if (X.t === null) { $('#extask').innerHTML = `<p class="muted">${REMOTE_OFF}</p>`; foot(); return; }
+    if (X.v) { $('#extask').innerHTML = `<div class="excard"><div class="question">${X.t.q}</div><div class="pv ${X.ok ? 'ok' : 'no'}"><span class="pen">${X.ok ? 'Teisingai!' : 'Klaida'}</span></div></div>`; solution(); return; }
+    soloTask($('#extask'), X.t, '', apiFor(X.t), (ok, v) => { X.ok = ok; X.v = v; X.shown = 0; solution(); }, { noSteps: true });
+    foot();
   }
 
   /* =====================================================================
@@ -14148,12 +14203,14 @@ const VIZ = (function () {
       // keep a sheet around 10–14 parts
       let total = plan.reduce((a, p) => a + p[1], 0); while (total > 14) { const k = plan.findIndex(p => p[1] > 1); if (k < 0) break; plan[k][1]--; total--; }
       return plan.map(([e, np], i) => {
-        const parts = []; let first = null;
+        const parts = []; let first = null, dups = 0;
         for (let j = 0; j < np; j++) {
           let t = null;
           for (let tries = 0; tries < 12; tries++) { try { t = taskFor(e.tp, { shape: e.shape, lvl: e.lvl }); } catch (er) { t = null; } if (!t) continue; if (!first || e.shape || taskShape(t) === taskShape(first)) break; }
           if (!t) continue; t.lvl = t.lvl || e.lvl; if (!first) first = t;
-          if (!t.pending && parts.some(p => plainText(p.t.q) === plainText(t.q))) { j--; if (parts.length + 6 < j + 12) continue; else break; }
+          // a repeated question: try again, at most 12 times per exercise (questions that differ only in a picture,
+          // like clocks, look the same as text — the old check never ended for them and froze the page)
+          if (!t.pending && parts.some(p => plainText(p.t.q) === plainText(t.q) && (p.t.q === t.q || !/<svg/.test(t.q)))) { if (++dups > 12) break; j--; continue; }
           parts.push({ t, key: `${i}.${j}` });
         }
         return { n: i + 1, head: e.head || (parts.length > 1 ? 'Išspręsk:' : ''), lvl: e.lvl, parts, tp: e.tp, shape: e.shape };
@@ -14211,13 +14268,11 @@ const VIZ = (function () {
   function partHTML(p, label, multi, noHints) {
     const t = p.t, r = (curWs().res || {})[p.key]; const qh = multi && t.qp ? t.qp : t.q;
     if (t.pending) return `<div class="part" data-k="${p.key}" data-st="wait"><div class="pq">${label ? `<span class="pl">${label}</span>` : ''}<span class="muted">${t.off ? `${REMOTE_OFF} <button type="button" class="linkbtn" data-retry>Bandyti dar kartą</button>` : 'Kraunama užduotis… (jei serveris ilgai nenaudotas, jis bunda iki minutės)'}</span></div></div>`;
-    const hint = !noHints && (t.remote ? t.nsteps : (t.steps || []).length) > 1 && !r;
     return `<div class="part" data-k="${p.key}" data-st="${r ? (r.ok ? 'ok' : 'no') : ''}">
       <div class="pq">${label ? `<span class="pl">${label}</span>` : ''}<span>${qh}</span></div>
       ${t.ans.t !== 'choice' || stepsPossible(t) ? `<ol class="work">${(r && r.lines && r.lines.length ? r.lines : ['']).map((v, k) => lineHTML(v, k)).join('')}</ol>` : ''}
-      <div class="hintbox why soft" hidden></div>
       ${t.ans.t === 'choice' ? `<div class="choices" role="group" aria-label="Atsakymo variantai">${t.ans.opts.map((o, i) => `<button type="button" data-i="${i}"${r ? ' disabled' : ''}>${o}</button>`).join('')}</div>`
-        : `<div class="ats"><label for="a-${p.key}">Ats.</label><div class="inbox"><input id="a-${p.key}" class="ain" spellcheck="false" autocapitalize="off" autocomplete="off" inputmode="text" placeholder="${esc(PH[t.ans.t] || '')}" value="${esc(r ? r.raw : '')}"${r ? ' readonly' : ''}>${t.ans.unit ? `<span class="unit">${t.ans.unit}</span>` : ''}</div>${r ? '' : `<button type="button" class="primary chk">Tikrinti</button>`}${hint ? '<button type="button" class="ghost hintb">Užuomina</button>' : ''}</div>`}
+        : `<div class="ats"><label for="a-${p.key}">Ats.</label><div class="inbox"><input id="a-${p.key}" class="ain" spellcheck="false" autocapitalize="off" autocomplete="off" inputmode="text" placeholder="${esc(PH[t.ans.t] || '')}" value="${esc(r ? r.raw : '')}"${r ? ' readonly' : ''}>${t.ans.unit ? `<span class="unit">${t.ans.unit}</span>` : ''}</div>${r ? '' : `<button type="button" class="primary chk">Tikrinti</button>`}</div>`}
       ${r ? '' : `<div class="pkeys" aria-label="Simboliai">${[...new Set([...(KEYS[t.ans.t] || []), ...WORK_KEYS])].map(k => `<button type="button" data-key="${esc(k)}">${esc(k)}</button>`).join('')}</div>`}
       <div class="preview"></div>
       <div class="pfb"></div></div>`;
@@ -14256,9 +14311,7 @@ const VIZ = (function () {
       box.focus(); if (box === ain) preview(el, t, ain.value); }); });
     const cb = el.querySelector('.chk'); if (cb) cb.addEventListener('click', () => check(key));
     el.querySelectorAll('.choices button').forEach(b => b.addEventListener('click', () => check(key, b.dataset.i)));
-    const hb = el.querySelector('.hintb'); let shown = 0; const maxH = Math.max(1, (t.remote ? t.nsteps : (t.steps || []).length) - 1);
-    if (hb) hb.addEventListener('click', async () => { const hbox = el.querySelector('.hintbox'); if (shown < maxH) shown++; hbox.hidden = false;
-      if (t.remote) { hb.disabled = true; const h = await engineApi('pack/hint', { token: t.token, k: shown }); hb.disabled = false; if (!h) { shown--; hbox.innerHTML = REMOTE_OFF; return; } t.steps = h.steps; } hbox.innerHTML = `<b>${shown === 1 ? 'Pirmas žingsnis' : 'Užuominos'}:</b><ol class="steps hint-steps">${t.steps.slice(0, shown).map(x => `<li>${x}</li>`).join('')}</ol>`; hb.textContent = shown < maxH ? `Kita užuomina (${shown + 1}/${maxH})` : 'Užuominos parodytos'; if (shown >= maxH) hb.disabled = true; P.hints = shown; });
+    // no hints (Tomas, 2026-11-01): the steps are shown only after the answer has been checked
     if (r) showResult(key, r, true);
   }
   function preview(el, t, v) {
