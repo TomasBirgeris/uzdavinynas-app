@@ -6360,76 +6360,25 @@ stopic({
 
 ;
 /* =====================================================================
-   12 B course, chapter 1 — Trigonometrinės lygtys (bendrasis kursas)
-   Easier than 12 A and in degrees, like the VBE B formula sheet (x = 30° + 360°k).
-   Built from the 12 A helpers (tx8.js); to be tuned to the B textbook's exercises.
+   12 B course, chapter 1 — Trigonometrinės lygtys (bendrasis kursas), in degrees like the VBE B formula sheet.
+   The tasks are solved on the server (Topic Packs, CLAUDE.md principle 4): each shape asks for some templates of
+   g12-trigid, g12-trigsameb (same-angle formulas) or g12-trigeqdeg (equations, answers in degrees).
+   Without the server these shapes are left out of the worksheets; the lessons still show.
    ===================================================================== */
-const degSer = (list) => list.map(s => ({ c: +s.c * 180, p: +s.p * 180, pm: !!s.pm }));
-const argD = (b, phi) => { let s = b === 1 ? X : `${b}${X}`; if (phi) s += ` ${phi < 0 ? MINUS : '+'} ${Math.abs(phi)}°`; return s; };
-/** fn(b·x + φ°) = θ-series (degrees) → x-series */
-const linSerD = (list, b, phi) => { const out = []; for (const s of list) for (const c of s.pm && s.c && phi ? [s.c, -s.c] : [s.c]) out.push({ c: (c - phi) / b, p: s.p / b, pm: s.pm && !phi }); return out; };
-const serInD = (list, lo, hi) => { const out = []; for (const s of list) for (const c of s.pm && s.c ? [s.c, -s.c] : [s.c]) for (let k = -40; k <= 40; k++) { const v = Math.round((c + s.p * k) * 1e6) / 1e6; if (v >= lo - 1e-9 && v <= hi + 1e-9 && !out.includes(v)) out.push(v); } return out.sort((a, b) => a - b); };
-const SIMP1B = () => SIMP1().filter((x, i) => [0, 1, 2, 3, 4, 6, 10].includes(i));
-const SIMP2B = () => SIMP2().filter((x, i) => [0, 2, 8].includes(i));
-
 stopic({
   id: 'g12b-same', g: 12, area: 'A', title: 'To paties kampo trigonometrinės formulės (B)',
   theory: `<div class="rule">${mms(`${fnA('sin', 2)} + ${fnA('cos', 2)} = 1`)}, ${mm(`${fnA('tg')} = ${M.f(fnA('sin'), fnA('cos'))}`)}, ${mm(`1 + ${fnA('tg', 2)} = ${M.f(1, fnA('cos', 2))}`)}.</div>
 <p>Žinant vienos funkcijos reikšmę ir ketvirtį, kitas randame iš šių formulių. <b>Ženklą lemia ketvirtis</b>: I (0°–90°) — visos teigiamos; II (90°–180°) — teigiamas tik sinusas; III (180°–270°) — tik tangentas; IV (270°–360°) — tik kosinusas.</p>
 <p><b>Lyginumas:</b> ${mm(`sin(${MINUS}α) = ${MINUS}sin α`)}, ${mm(`cos(${MINUS}α) = cos α`)}, ${mm(`tg(${MINUS}α) = ${MINUS}tg α`)}. <b>Periodiškumas:</b> ${mm('sin(α + 360° · <i>k</i>) = sin α')}, ${mm('cos(α + 360° · <i>k</i>) = cos α')}, ${mm('tg(α + 180° · <i>k</i>) = tg α')}. Gretutiniai kampai: ${mm('sin(180° − α) = sin α')}, ${mm('cos(180° − α) = −cos α')}.</p>`,
   shapes: [
-    { k: 'find', lvl: 1, w: 3, head: 'Apskaičiuok:', gen() {
-      const qd = R.int(1, 4), t = tripleAngle(qd); const given = R.pick(['sin', 'cos', 'sin', 'cos', 'tg']); const want = R.pick(['sin', 'cos', 'tg'].filter(f => f !== given)); const other = given === 'sin' ? 'cos' : 'sin'; const v = t[want];
-      if (given === 'tg') { const c2 = q(t.b * t.b, t.c * t.c); return { q: `Apskaičiuok ${mm(fnA(want))}, kai ${mm(`${fnA('tg')} = ${M.q(t.tg)}`)} ir ${mm(quadRange(qd, AL, true))}.`, qp: `${mm(fnA(want))}, kai ${mm(`${fnA('tg')} = ${M.q(t.tg)}`)} ir ${mm(quadRange(qd, AL, true))}`, ans: { t: 'num', v }, steps: [`${mm(`1 + ${fnA('tg', 2)} = ${M.f(1, fnA('cos', 2))}`)}: ${mm(`${fnA('cos', 2)} = ${M.q(c2)}`)}; ${QN[qd - 1]} ketvirtyje ${mm(`${fnA('cos')} = ${M.q(t.cos)}`)}.`, ...(want === 'sin' ? [mm(`${fnA('sin')} = ${fnA('tg')} · ${fnA('cos')} = ${M.q(t.sin)}`)] : [])], mistakes: [{ v: v.neg(), why: `Ženklą lemia ketvirtis: ${QN[qd - 1]} ketvirtyje ${want === 'sin' ? 'sinusas' : 'kosinusas'} ${+v > 0 ? 'teigiamas' : 'neigiamas'}.` }] }; }
-      const cond = `${mm(`${fnA(given)} = ${M.q(t[given])}`)} ir ${mm(quadRange(qd, AL, true))}`;
-      const steps = [`${mm(`${fnA(other, 2)} = 1 ${MINUS} ${M.pb(t[given])}<sup>2</sup> = ${M.q(q((given === 'sin' ? t.b : t.a) ** 2, t.c * t.c))}`)}.`, `${QN[qd - 1]} ketvirtyje ${other === 'sin' ? 'sinusas' : 'kosinusas'} ${(other === 'sin' ? sgnSin(qd) : sgnCos(qd)) > 0 ? 'teigiamas' : 'neigiamas'}: ${mm(`${fnA(other)} = ${M.q(t[other])}`)}.`];
-      if (want === 'tg') steps.push(mm(`${fnA('tg')} = ${M.f(M.q(t.sin), M.q(t.cos))} = ${M.q(t.tg)}`));
-      return { q: `Apskaičiuok ${mm(fnA(want))}, kai ${cond}.`, qp: `${mm(fnA(want))}, kai ${cond}`, ans: { t: 'num', v }, steps,
-        mistakes: [{ v: v.neg(), why: `Ženklą lemia ketvirtis: ${QN[qd - 1]} ketvirtyje ${want === 'sin' ? 'sinusas' : want === 'cos' ? 'kosinusas' : 'tangentas'} ${+v > 0 ? 'teigiamas' : 'neigiamas'}.` }, ...(want === 'tg' ? [{ v: t.cos.div(t.sin), why: 'tg α = sin α / cos α — sinusas skaitiklyje.' }] : [])] };
-    } },
-    { k: 'simp1', lvl: 1, w: 2, head: 'Suprastink reiškinius:', gen() { return simpTask(SIMP1B(), 1); } },
-    { k: 'valid', lvl: 1, head: 'Ar gali to paties kampo sinusas ir kosinusas būti lygūs:', gen() {
-      const [a, b, c] = R.pick(TRIPLES); const ok = R.chance(0.5); const [n1, n2] = ok ? [a, b] : R.pick([[a, b + 1], [a - 1, b], [b, c], [a, a]]); if (n1 <= 0 || n2 <= 0 || n1 > c || n2 > c) return null;
-      const s1 = R.sign(), s2 = R.sign(); const sv = q(s1 * n1, c), cv = q(s2 * n2, c); const sum = sv.mul(sv).add(cv.mul(cv)); const good = sum.eq(Q.of(1));
-      const cond = `${mm(`sin α = ${M.q(sv)}`)}, ${mm(`cos α = ${M.q(cv)}`)}`;
-      return { q: `Ar gali būti ${cond}? Atsakymą pagrįsk.`, qp: cond, ans: choice([['taip', good, `Patikrink: sin²α + cos²α = ${M.q(sum)}${good ? '' : ' ≠ 1'}.`], ['ne', !good, 'sin²α + cos²α = 1 — tokio kampo nėra tik tada, kai ši lygybė netenkinama.']]),
-        steps: [`Tikriname pagrindinę tapatybę: ${mm(`${M.pb(sv)}<sup>2</sup> + ${M.pb(cv)}<sup>2</sup> = ${M.f(n1 * n1 + n2 * n2, c * c)}`)}.`, good ? `Gavome 1 — toks kampas yra (ženklai rodo, kuriame ketvirtyje).` : `Gavome ne 1 — tokio kampo nėra.`] };
-    } },
-    { k: 'parity', lvl: 2, head: 'Suprastink reiškinius:', gen() {
-      const R2 = REDU.filter(r => !/π\/2/.test(r[0])); const r1 = R.pick(R2), r2 = R.pick(R2.filter(r => r !== r1));
-      const argD = (pat) => pat.replace('E', R.pick(['360°', '720°', '1080°'])).replace('O', '180°').replace('−', MINUS);
-      const a1 = argD(r1[0]), a2 = argD(r2[0]); const op = R.pick(['+', '−', '·']); const h = `${reduHTML(r1, a1)} ${op === '−' ? MINUS : op} ${reduHTML(r2, a2)}`;
-      let v, show;
-      if (op === '·') { const sg = r1[2] * r2[2]; const fs = [r1[3], r2[3]].sort(); let asc, html;
-        if (fs[0] === fs[1]) { asc = `${fnAsc[fs[0]]}^2`; html = fnA(fs[0], 2); } else if (fs.join() === 'cos,tg') { asc = 'sin(a)'; html = fnA('sin'); } else { asc = `${fnAsc[fs[0]]}*${fnAsc[fs[1]]}`; html = `${fnA(fs[0])} ${fnA(fs[1])}`; }
-        v = `${sg < 0 ? '-' : ''}${asc}`; show = `${sg < 0 ? MINUS : ''}${html}`;
-      } else { const c = {}; c[r1[3]] = (c[r1[3]] || 0) + r1[2]; c[r2[3]] = (c[r2[3]] || 0) + (op === '−' ? -1 : 1) * r2[2];
-        const ks = Object.keys(c).filter(f => c[f]); v = ks.length ? ks.map(f => `${c[f] < 0 ? '-' : '+'}${Math.abs(c[f]) === 1 ? '' : Math.abs(c[f]) + '*'}${fnAsc[f]}`).join('').replace(/^\+/, '') : '0'; show = ks.length ? terms(ks.map(f => [c[f], fnA(f)])) : '0'; }
-      return { q: `Suprastink reiškinį: ${mm(h)}`, qp: mm(h), ans: Object.assign(exprA(v, show), { maxSize: astSize(parseExpr(v)) + 1 }),
-        steps: [`${mm(`${reduHTML(r1, a1)} = ${r1[2] < 0 ? MINUS : ''}${fnA(r1[3])}`)}, ${mm(`${reduHTML(r2, a2)} = ${r2[2] < 0 ? MINUS : ''}${fnA(r2[3])}`)} (lyginumas: sin(−α) = −sin α, cos(−α) = cos α, tg(−α) = −tg α; periodiškumas: sin(α + 360°k) = sin α, tg(α + 180°k) = tg α).`, `Gauname: ${mm(show)}.`],
-        mistakes: [{ v: `-(${v})`, why: 'Patikrink ženklus: kurios funkcijos lyginės, kurios nelyginės, ir koks ženklas gretutiniam kampui (180° − α).' }] };
-    } },
-    { k: 'tgexpr', lvl: 2, head: 'Apskaičiuok reiškinių reikšmes:', gen() {
-      const t = R.pick([Q.of(2), Q.of(3), Q.of(-2), q(1, 2), q(3, 4)]); const a = R.int(1, 5), b = R.nz(-4, 4), c = R.int(1, 4), d = R.nz(-4, 4); const den = t.mul(c).add(d); if (+den === 0 || a * d === b * c) return null; const v = t.mul(a).add(b).div(den);
-      const e = M.f(terms([[a, fnA('sin')], [b, fnA('cos')]]), terms([[c, fnA('sin')], [d, fnA('cos')]]));
-      return { q: `Apskaičiuok ${mm(e)}, kai ${mm(`${fnA('tg')} = ${M.q(t)}`)}.`, qp: `${mm(e)}, kai ${mm(`${fnA('tg')} = ${M.q(t)}`)}`, ans: { t: 'num', v },
-        steps: [`Skaitiklį ir vardiklį daliname iš ${mm(fnA('cos'))}: ${mm(M.f(terms([[a, fnA('tg')], [b, '']]), terms([[c, fnA('tg')], [d, '']])))}.`, `Įrašome ${mm(`${fnA('tg')} = ${M.q(t)}`)}: ${mm(`${M.f(M.q(t.mul(a).add(b)), M.q(den))} = ${M.q(v)}`)}.`],
-        mistakes: [{ v: q(a, c), why: 'Dalijant iš cos α, reikia padalyti visus narius — lieka ir laisvieji nariai.' }] };
-    } },
-    { k: 'simp2', lvl: 2, head: 'Suprastink reiškinius:', gen() { return simpTask(SIMP2B(), 2); } },
-    { k: 'const', lvl: 2, head: 'Apskaičiuok reiškinio reikšmę (ji nepriklauso nuo α):', gen() {
-      const k = R.int(2, 6), c = R.int(1, 9), m = R.int(2, 5); const v = k + c;
-      const e = `${k} ${fnA('sin', 2)} + ${c} + ${k} ${fnA('cos', 2)}`; const e2 = `(${fnA('sin')} + ${fnA('cos')})<sup>2</sup> ${MINUS} 2 ${fnA('sin')} ${fnA('cos')} + ${m}`;
-      const two = R.chance(0.5);
-      return two ? { q: `Apskaičiuok reiškinio ${mm(e2)} reikšmę.`, qp: mm(e2), ans: { t: 'num', v: 1 + m }, steps: [`${mm(`(${fnA('sin')} + ${fnA('cos')})<sup>2</sup> = ${fnA('sin', 2)} + 2 ${fnA('sin')} ${fnA('cos')} + ${fnA('cos', 2)} = 1 + 2 ${fnA('sin')} ${fnA('cos')}`)}.`, `${mm(`1 + ${m} = ${1 + m}`)}.`], mistakes: [{ v: m, why: '(sin α + cos α)² = 1 + 2 sin α cos α — nepamiršk vieneto.' }] }
-        : { q: `Apskaičiuok reiškinio ${mm(e)} reikšmę.`, qp: mm(e), ans: { t: 'num', v }, steps: [`${mm(`${k}(${fnA('sin', 2)} + ${fnA('cos', 2)}) + ${c} = ${k} + ${c} = ${v}`)}.`], mistakes: [{ v: 2 * k + c, why: `${k} sin²α + ${k} cos²α = ${k}(sin²α + cos²α) = ${k}.` }] };
-    } },
-    { k: 'sumsq', lvl: 3, head: 'Apskaičiuok:', gen() {
-      const m = R.pick([q(1, 2), q(1, 3), q(2, 3), q(-1, 2), q(1, 5)]); const p = m.mul(m).sub(1).div(2);
-      return { q: `Yra žinoma, kad ${mm(`${fnA('sin')} + ${fnA('cos')} = ${M.q(m)}`)}. Apskaičiuok ${mm(`${fnA('sin')} ${fnA('cos')}`)}.`, qp: `${mm(`${fnA('sin')} ${fnA('cos')}`)}, kai ${mm(`${fnA('sin')} + ${fnA('cos')} = ${M.q(m)}`)}`, ans: { t: 'num', v: p },
-        steps: [`Keliame abi puses kvadratu: ${mm(`1 + 2 ${fnA('sin')} ${fnA('cos')} = ${M.q(m.mul(m))}`)}.`, mm(`${fnA('sin')} ${fnA('cos')} = ${M.q(p)}`)],
-        mistakes: [{ v: m.mul(m).div(2), why: '(sin α + cos α)² = 1 + 2 sin α cos α — nepamiršk vieneto.' }] };
-    } },
+    wrapShape('find', 'g12-trigid', 1, 'Apskaičiuok:', null, 3, 'sin2cos,cos2tg,tg2'),
+    wrapShape('simp1', 'g12-trigid', 1, 'Suprastink reiškinius:', null, 2, 'simplify'),
+    wrapShape('valid', 'g12-trigsameb', 1, 'Ar gali būti tokios to paties kampo sinuso ir kosinuso reikšmės:', null, 1, 'valid'),
+    wrapShape('parity', 'g12-trigsameb', 2, 'Suprastink reiškinius:', null, 1, 'parity'),
+    wrapShape('tgexpr', 'g12-trigid', 2, 'Apskaičiuok reiškinių reikšmes:', null, 1, 'ratio'),
+    wrapShape('simp2', 'g12-trigid', 2, 'Suprastink reiškinius:', null, 1, 'simplify'),
+    wrapShape('const', 'g12-trigsameb', 2, 'Apskaičiuok reiškinio reikšmę (ji nepriklauso nuo α):', null, 1, 'const1,const2'),
+    wrapShape('sumsq', 'g12-trigid', 3, 'Apskaičiuok:', null, 1, 'sumsq'),
   ],
 });
 
@@ -6439,102 +6388,16 @@ stopic({
 <p>Kai ${mm('|<i>a</i>| &gt; 1')}, lygtys su sinusu ir kosinusu sprendinių neturi. Atskiri atvejai: ${mm(`sin ${X} = 0 ⇔ ${X} = 180°${K}`)}, ${mm(`cos ${X} = 0 ⇔ ${X} = 90° + 180°${K}`)}, ${mm(`sin ${X} = 1 ⇔ ${X} = 90° + 360°${K}`)}, ${mm(`cos ${X} = 1 ⇔ ${X} = 360°${K}`)}.</p>
 <p>Atsakymą rašyk, pvz., <code>x = 30° + 360°k; x = 150° + 360°k</code> arba <code>±60° + 360°k</code>.</p>`,
   shapes: [
-    { k: 'basic', lvl: 1, w: 3, head: 'Išspręsk lygtis (atsakymą rašyk laipsniais):', gen() {
-      const fn = R.pick(['sin', 'cos', 'tg', 'sin', 'cos']); const aS = R.pick(fn === 'tg' ? TGV : SINV); const th = degSer(trigSeries(fn, aS));
-      if (fn !== 'tg' && R.chance(0.1)) { const w = R.pick(['3/2', '-2', '√3', '5/4']); return { q: `Išspręsk lygtį ${mm(`${fn} ${X} = ${valHTML(w)}`)} (atsakymą rašyk laipsniais).`, qp: mm(`${fn} ${X} = ${valHTML(w)}`), ans: serAns([], { deg: true }), steps: [`${fn === 'sin' ? 'Sinuso' : 'Kosinuso'} reikšmės yra tik intervale ${mm(`[${MINUS}1; 1]`)}.`, 'Lygtis realiųjų sprendinių neturi.'] }; }
-      return { q: `Išspręsk lygtį ${mm(`${fn} ${X} = ${valHTML(aS)}`)} (atsakymą rašyk laipsniais).`, qp: mm(`${fn} ${X} = ${valHTML(aS)}`), ans: serAns(th, { deg: true }),
-        steps: [`Formulė: ${fn === 'sin' ? mm(`${X} = (${MINUS}1)<sup>${K}</sup> arcsin <i>a</i> + 180°${K}`) : fn === 'cos' ? mm(`${X} = ±arccos <i>a</i> + 360°${K}`) : mm(`${X} = arctg <i>a</i> + 180°${K}`)}.`, `Atsakymas: ${serShow(th, { deg: true })}.`], mistakes: mistB(fn, th) };
-    } },
-    { k: 'lin', lvl: 1, w: 2, head: 'Išspręsk lygtis (atsakymą rašyk laipsniais):', gen() {
-      const fn = R.pick(['sin', 'cos', 'tg']); const L = linFormB(fn); const th = degSer(trigSeries(fn, L.aS));
-      return { q: `Išspręsk lygtį ${mm(L.h)} (atsakymą rašyk laipsniais).`, qp: mm(L.h), ans: serAns(th, { deg: true }),
-        steps: [...L.lines, `Atsakymas: ${serShow(th, { deg: true })}.`], mistakes: mistB(fn, th) };
-    } },
-    { k: 'window', lvl: 1, w: 2, head: 'Rask lygčių sprendinius nurodytame intervale:', gen() {
-      const fn = R.pick(['sin', 'cos', 'tg']); const L = R.chance(0.4) ? linFormB(fn) : null; const aS = L ? L.aS : R.pick(fn === 'tg' ? TGV : SINV); const h = L ? L.h : `${fn} ${X} = ${valHTML(aS)}`;
-      const [lo, hi] = R.pick([[-270, 450], [-540, 180], [0, 360], [-360, 270], [-90, 270], [-180, 540]]);
-      const vals = serInD(degSer(trigSeries(fn, aS)), lo, hi); if (!vals.length || vals.length > 6) return null;
-      return { q: `Rask lygties ${mm(h)} sprendinius intervale [${fmtNum(lo)}°; ${fmtNum(hi)}°]. Atsakymą rašyk laipsniais, pvz. 30; 150.`, qp: `${mm(h)}, ${mm(`${X} ∈ [${fmtNum(lo)}°; ${fmtNum(hi)}°]`)}`,
-        ans: { t: 'set', v: vals, show: vals.map(v => fmtNum(v) + '°').join('; ') },
-        steps: [`Visi sprendiniai: ${serShow(degSer(trigSeries(fn, aS)), { deg: true })}.`, `Tikriname sveikąsias ${K} reikšmes ir paliekame sprendinius iš intervalo: ${mm(vals.map(v => fmtNum(v) + '°').join('; '))}.`],
-        mistakes: vals.length > 1 ? [{ v: [vals.find(v => v >= 0) ?? vals[0]], why: 'Tai tik vienas sprendinys — perrink visas k reikšmes, kurios duoda sprendinius intervale.' }] : [] };
-    } },
-    { k: 'reduce', lvl: 2, w: 2, head: 'Pritaikyk lyginumo ir periodiškumo savybes ir išspręsk lygtis (laipsniais):', gen() {
-      const [pat, fn, sg, F] = R.pick([['180° − x', 'sin', 1, 'sin'], ['180° − x', 'cos', -1, 'cos'], ['360° − x', 'cos', 1, 'cos'], ['360° + x', 'sin', 1, 'sin'], ['720° − x', 'cos', 1, 'cos'], ['720° + x', 'sin', 1, 'sin'], ['−x', 'sin', -1, 'sin'], ['−x', 'cos', 1, 'cos'], ['−x', 'tg', -1, 'tg'], ['180° + x', 'tg', 1, 'tg'], ['180° − x', 'tg', -1, 'tg']]);
-      const aS = F === 'tg' ? R.pick(['1', '-1', '√3', '-√3']) : R.pick(['1/2', '-1/2', '√2/2', '√3/2', '-√3/2']);
-      const TWO = { '1/2': [1, '1'], '-1/2': [-1, '1'], '√2/2': [1, M.sq(2)], '√3/2': [1, M.sq(3)], '-√3/2': [-1, M.sq(3)], '1': [1, '1'], '-1': [-1, '1'], '√3': [1, M.sq(3)], '-√3': [-1, M.sq(3)] };
-      const [s2, h] = TWO[aS]; const C = -sg * s2; const arg = pat.replace('−', MINUS).replace('x', X); const k = F === 'tg' ? '' : '2 ';
-      const sol = degSer(trigSeries(F, aS)); const eq = `${k}${fn}(${arg}) ${C < 0 ? MINUS : '+'} ${h} = 0`;
-      return { q: `Išspręsk lygtį ${mm(eq)} (atsakymą rašyk laipsniais).`, qp: mm(eq), ans: serAns(sol, { deg: true }),
-        steps: [`${mm(`${fn}(${arg}) = ${sg < 0 ? MINUS : ''}${F} ${X}`)} (${/[36]0°|720°/.test(pat) && !/180°/.test(pat) ? 'periodiškumas' : 'lyginumas, gretutiniai kampai'}).`, `Gauname ${mm(`${F} ${X} = ${valHTML(aS)}`)}.`, `Atsakymas: ${serShow(sol, { deg: true })}.`],
-        mistakes: [{ v: serTyped(degSer(trigSeries(F, aS.startsWith('-') ? aS.slice(1) : '-' + aS)), true), why: 'Patikrink ženklą: sin(−x) = −sin x, cos(−x) = cos x, tg(−x) = −tg x, cos(180° − x) = −cos x.' }] };
-    } },
-    { k: 'minpos', lvl: 2, head: 'Rask (laipsniais):', gen() {
-      const fn = R.pick(['sin', 'cos', 'tg']); const L = R.chance(0.5) ? linFormB(fn) : null; const aS = L ? L.aS : R.pick(fn === 'tg' ? TGV.filter(v => v !== '0') : SINV.filter(v => v !== '0')); const h = L ? L.h : `${fn} ${X} = ${valHTML(aS)}`;
-      const vals = serInD(degSer(trigSeries(fn, aS)), -720, 720); const neg = R.chance(0.5); const pos = vals.filter(v => v > 0), ng = vals.filter(v => v < 0); if (!pos.length || !ng.length) return null;
-      const v = neg ? Math.max(...ng) : Math.min(...pos);
-      return { q: `Rask ${neg ? 'didžiausią neigiamąjį' : 'mažiausią teigiamąjį'} lygties ${mm(h)} sprendinį laipsniais.`, qp: `${neg ? 'didžiausią neigiamąjį' : 'mažiausią teigiamąjį'} lygties ${mm(h)} sprendinį`, ans: { t: 'num', v, unit: '°' },
-        steps: [`Visi sprendiniai: ${serShow(degSer(trigSeries(fn, aS)), { deg: true })}.`, `Perrenkame ${K} = 0, ±1, ±2: ${mm(vals.filter(x => Math.abs(x) <= 360).map(x => fmtNum(x) + '°').join('; '))}. ${neg ? 'Didžiausias neigiamasis' : 'Mažiausias teigiamasis'}: ${mm(fmtNum(v) + '°')}.`],
-        mistakes: [{ v: neg ? Math.min(...pos) : Math.max(...ng), why: `Tai ${neg ? 'mažiausias teigiamasis' : 'didžiausias neigiamasis'} sprendinys — perskaityk klausimą.` }] };
-    } },
-    { k: 'count', lvl: 2, head: 'Kiek sprendinių turi lygtis nurodytame intervale?', gen() {
-      const fn = R.pick(['sin', 'cos', 'tg']); const L = R.chance(0.5) ? linFormB(fn) : null; const aS = L ? L.aS : R.pick(fn === 'tg' ? TGV : SINV); const h = L ? L.h : `${fn} ${X} = ${valHTML(aS)}`;
-      const [lo, hi] = R.pick([[-360, 270], [-360, 360], [0, 720], [-450, 90], [-180, 540]]); const vals = serInD(degSer(trigSeries(fn, aS)), lo, hi); if (!vals.length) return null;
-      return { q: `Kiek sprendinių turi lygtis ${mm(h)} intervale [${fmtNum(lo)}°; ${fmtNum(hi)}°]?`, qp: `${mm(h)}, ${mm(`${X} ∈ [${fmtNum(lo)}°; ${fmtNum(hi)}°]`)}`, ans: { t: 'num', v: vals.length },
-        steps: [`Visi sprendiniai: ${serShow(degSer(trigSeries(fn, aS)), { deg: true })}.`, `Intervale: ${mm(vals.map(v => fmtNum(v) + '°').join('; '))} — iš viso ${vals.length}.`],
-        mistakes: [{ v: vals.length - 1, why: 'Patikrink intervalo galus — jie įeina (laužtiniai skliaustai).' }] };
-    } },
-    { k: 'factor', lvl: 3, w: 2, head: 'Išspręsk lygtis (atsakymą rašyk laipsniais):', gen() {
-      const kind = R.int(0, 2);
-      if (kind === 0) { const F1 = R.pick(['sin', 'cos']), F2 = R.pick(['sin', 'cos']); const aS = R.pick(['1/2', '-1/2', '√2/2', '√3/2']); const TWO = { '1/2': '1', '-1/2': '1', '√2/2': M.sq(2), '√3/2': M.sq(3) };
-        const h = `${F1} ${X} (2 ${F2} ${X} ${aS.startsWith('-') ? '+' : MINUS} ${TWO[aS]}) = 0`; const sol = degSer([...trigSeries(F1, '0'), ...trigSeries(F2, aS)]);
-        return { q: `Išspręsk lygtį ${mm(h)} (atsakymą rašyk laipsniais).`, qp: mm(h), ans: serAns(sol, { deg: true }), steps: [`Sandauga lygi nuliui, kai bent vienas daugiklis lygus nuliui: ${mm(`${F1} ${X} = 0`)} arba ${mm(`${F2} ${X} = ${valHTML(aS)}`)}.`, `Atsakymas: ${serShow(sol, { deg: true })}.`],
-          mistakes: [{ v: serTyped(degSer(trigSeries(F2, aS)), true), why: `Nepamiršk pirmojo daugiklio: ${F1} x = 0 irgi duoda sprendinius.` }] }; }
-      if (kind === 1) { const F = R.pick(['sin', 'cos']); const [c, key] = R.pick([[1, '-1'], [-1, '1'], [3, null], [-2, null]]);
-        const h = `${F}<sup>2</sup> ${X} ${c < 0 ? MINUS : '+'} ${Math.abs(c) === 1 ? '' : Math.abs(c)}${F} ${X} = 0`; const sol = degSer([...trigSeries(F, '0'), ...(key ? trigSeries(F, key) : [])]);
-        return { q: `Išspręsk lygtį ${mm(h)} (atsakymą rašyk laipsniais).`, qp: mm(h), ans: serAns(sol, { deg: true }), steps: [`Iškeliame bendrą daugiklį: ${mm(`${F} ${X} (${F} ${X} ${c < 0 ? MINUS : '+'} ${Math.abs(c)}) = 0`)}.`, `${mm(`${F} ${X} = 0`)} arba ${mm(`${F} ${X} = ${fmtNum(-c)}`)}${key ? '' : ` — ${mm(`|${fmtNum(-c)}| &gt; 1`)}, sprendinių nėra`}.`, `Atsakymas: ${serShow(sol, { deg: true })}.`],
-          mistakes: key ? [{ v: serTyped(degSer(trigSeries(F, key)), true), why: `Negalima dalyti iš ${F} x — prarandami sprendiniai ${F} x = 0.` }] : [] }; }
-      const [aS, h1] = R.pick([['1/2', `2 sin ${X} ${MINUS} 1`], ['-1/2', `2 sin ${X} + 1`], ['√2/2', `2 sin ${X} ${MINUS} ${M.sq(2)}`]]); const [bS, h2] = R.pick([['-1', `1 + cos ${X}`], ['1', `cos ${X} ${MINUS} 1`], ['1/2', `2 cos ${X} ${MINUS} 1`]]);
-      const sol = degSer([...trigSeries('sin', aS), ...trigSeries('cos', bS)]); const h = `(${h1})(${h2}) = 0`;
-      return { q: `Išspręsk lygtį ${mm(h)} (atsakymą rašyk laipsniais).`, qp: mm(h), ans: serAns(sol, { deg: true }), steps: [`${mm(`sin ${X} = ${valHTML(aS)}`)} arba ${mm(`cos ${X} = ${valHTML(bS)}`)}.`, `Atsakymas: ${serShow(sol, { deg: true })}.`],
-        mistakes: [{ v: serTyped(degSer(trigSeries('sin', aS)), true), why: 'Sandauga lygi nuliui, kai BET KURIS daugiklis lygus nuliui — išspręsk abi lygtis.' }] };
-    } },
-    { k: 'quad', lvl: 3, head: 'Išspręsk lygtis (atsakymą rašyk laipsniais):', gen() {
-      const F = R.pick(['sin', 'cos']); const R1 = { '1/2': q(1, 2), '-1/2': q(-1, 2), '1': Q.of(1), '-1': Q.of(-1) }; const k1 = R.pick(Object.keys(R1)); const t1 = R1[k1];
-      const t2 = R.pick([Q.of(2), Q.of(-2), Q.of(3), q(3, 2)]); const A = t1.d * t2.d, B = -(t1.n * t2.d + t2.n * t1.d), C = t1.n * t2.n;
-      const sol = degSer(trigSeries(F, k1)); const h = terms([[A, `${F}<sup>2</sup> ${X}`], [B, `${F} ${X}`], [C, '']]);
-      return { q: `Išspręsk lygtį ${mm(`${h} = 0`)} (atsakymą rašyk laipsniais).`, qp: mm(`${h} = 0`), ans: serAns(sol, { deg: true }),
-        steps: [`${mm(`<i>t</i> = ${F} ${X}`)}: ${mm(`${terms([[A, '<i>t</i><sup>2</sup>'], [B, '<i>t</i>'], [C, '']])} = 0`)}, ${mm(`<i>t</i> = ${M.q(t1)}`)} arba ${mm(`<i>t</i> = ${M.q(t2)}`)}.`, `${mm(`${F} ${X} = ${M.q(t2)}`)} sprendinių neturi (${mm(`|${M.q(t2)}| &gt; 1`)}).`, `Atsakymas: ${serShow(sol, { deg: true })}.`], mistakes: [] };
-    } },
+    wrapShape('basic', 'g12-trigeqdeg', 1, 'Išspręsk lygtis (atsakymą rašyk laipsniais):', null, 3, 'basic,none'),
+    wrapShape('lin', 'g12-trigeqdeg', 1, 'Išspręsk lygtis (atsakymą rašyk laipsniais):', null, 2, 'lin,linrad,lintg'),
+    wrapShape('window', 'g12-trigeqdeg', 1, 'Rask lygčių sprendinius nurodytame intervale:', null, 2, 'window'),
+    wrapShape('reduce', 'g12-trigeqdeg', 2, 'Pritaikyk lyginumo ir periodiškumo savybes ir išspręsk lygtis (laipsniais):', null, 2, 'reduce'),
+    wrapShape('minpos', 'g12-trigeqdeg', 2, 'Rask (laipsniais):', null, 1, 'minpos'),
+    wrapShape('count', 'g12-trigeqdeg', 2, 'Kiek sprendinių turi lygtis nurodytame intervale?', null, 1, 'count'),
+    wrapShape('factor', 'g12-trigeqdeg', 3, 'Išspręsk lygtis (atsakymą rašyk laipsniais):', null, 2, 'fac1,fac2,fac3'),
+    wrapShape('quad', 'g12-trigeqdeg', 3, 'Išspręsk lygtis (atsakymą rašyk laipsniais):', null, 1, 'quad'),
   ],
 });
-
-/* shared by the 12 B equation shapes */
-function mistB(fn, th) {
-  const out = [];
-  if (fn === 'sin' && th.length === 2) out.push({ v: serTyped([th[0]], true), why: 'Sinusui yra dvi sprendinių serijos (arba viena su (−1)ᵏ): x = arcsin a + 360°k ir x = 180° − arcsin a + 360°k.' });
-  if (fn === 'cos' && th[0] && th[0].pm) out.push({ v: serTyped([{ ...th[0], pm: false }], true), why: 'Kosinusui nepamiršk ženklo ±: x = ±arccos a + 360°k.' });
-  if (fn === 'tg') out.push({ v: serTyped([{ ...th[0], p: 360 }], true), why: 'Tangento periodas 180°: x = arctg a + 180°k.' });
-  return out;
-}
-/** "3 − 4 sin x = 1", "2 cos x + √3 = 0", "√3 tg x − 3 = 0" → { h, aS, lines } (lines = the textbook steps with "| − 3", "| : 4") */
-function linFormB(fn) {
-  const F = `${fn} ${X}`, om = (h) => opMark(h);
-  if (fn === 'tg') { const [aS, h, lines] = R.pick([
-    ['√3', `${M.sq(3)} tg ${X} ${MINUS} 3 = 0`, [`${mm(`${M.sq(3)} tg ${X} ${MINUS} 3 = 0`)}${om('+ 3')}`, `${mm(`${M.sq(3)} tg ${X} = 3`)}${om(`: ${M.sq(3)}`)}`, mm(`tg ${X} = ${M.sq(3)}`)]],
-    ['-√3', `${M.sq(3)} tg ${X} + 3 = 0`, [`${mm(`${M.sq(3)} tg ${X} + 3 = 0`)}${om(`${MINUS} 3`)}`, `${mm(`${M.sq(3)} tg ${X} = ${MINUS}3`)}${om(`: ${M.sq(3)}`)}`, mm(`tg ${X} = ${MINUS}${M.sq(3)}`)]],
-    ['1', `2 tg ${X} ${MINUS} 2 = 0`, [`${mm(`2 tg ${X} ${MINUS} 2 = 0`)}${om('+ 2')}`, `${mm(`2 tg ${X} = 2`)}${om(': 2')}`, mm(`tg ${X} = 1`)]],
-    ['-1', `3 + 3 tg ${X} = 0`, [`${mm(`3 + 3 tg ${X} = 0`)}${om(`${MINUS} 3`)}`, `${mm(`3 tg ${X} = ${MINUS}3`)}${om(': 3')}`, mm(`tg ${X} = ${MINUS}1`)]],
-    ['√3/3', `3 tg ${X} = ${M.sq(3)}`, [`${mm(`3 tg ${X} = ${M.sq(3)}`)}${om(': 3')}`, mm(`tg ${X} = ${M.f(M.sq(3), 3)}`)]],
-    ['0', `4 tg ${X} = 0`, [`${mm(`4 tg ${X} = 0`)}${om(': 4')}`, mm(`tg ${X} = 0`)]]]); return { h, aS, lines }; }
-  if (R.chance(0.5)) { const aS = R.pick(['1/2', '-1/2', '1', '-1']); const a = { '1/2': 0.5, '-1/2': -0.5, '1': 1, '-1': -1 }[aS]; const k = Math.abs(a) === 1 ? R.pick([2, 3]) : R.pick([2, 4, 6]); const c = R.int(1, 5); const minus = R.chance(0.5);
-    const d = minus ? c - k * a : c + k * a; const h = minus ? `${c} ${MINUS} ${k} ${F} = ${fmtNum(d)}` : `${k} ${F} + ${c} = ${fmtNum(d)}`; const r = fmtNum(d - c);
-    const lines = [`${mm(h)}${om(`${MINUS} ${c}`)}`, `${mm(`${minus ? MINUS : ''}${k} ${F} = ${r}`)}${om(minus ? `: (${MINUS}${k})` : `: ${k}`)}`, mm(`${F} = ${valHTML(aS)}`)];
-    return { h, aS, lines }; }
-  const [aS, rad, sg] = R.pick([['√3/2', M.sq(3), -1], ['-√3/2', M.sq(3), 1], ['√2/2', M.sq(2), -1], ['-√2/2', M.sq(2), 1]]);
-  const h = `2 ${F} ${sg < 0 ? MINUS : '+'} ${rad} = 0`;
-  return { h, aS, lines: [`${mm(h)}${om(`${sg < 0 ? '+' : MINUS} ${rad}`)}`, `${mm(`2 ${F} = ${sg < 0 ? '' : MINUS}${rad}`)}${om(': 2')}`, mm(`${F} = ${valHTML(aS)}`)] };
-}
 
 ;
 /* =====================================================================
@@ -6545,11 +6408,12 @@ function linFormB(fn) {
    ===================================================================== */
 const FXA = `<i>f</i>(${X})`, FPXA = `<i>f</i> ′(${X})`;
 /** an existing topic's generator as a shape; ok(t) filters (e.g. B: polynomials only).
-    A Topic Pack (solved on the server) gives a placeholder that ui.js fills from the server, filter included. */
-function wrapShape(k, id, lvl, head, ok, w = 1) {
+    A Topic Pack (solved on the server) gives a placeholder that ui.js fills from the server, filter included;
+    tpl ("basic,none") asks the server for those templates only (one exercise kind of the textbook). */
+function wrapShape(k, id, lvl, head, ok, w = 1, tpl) {
   return { k, lvl, head, w, src: id, gen() {
     const tp = TOPICS.find(t => t.id === id);
-    if (tp.remote) return { pending: { topic: id, ok }, q: '', ans: { t: 'num' }, steps: [] };
+    if (tp.remote) return { pending: { topic: id, ok, tpl }, q: '', ans: { t: 'num' }, steps: [] };
     for (let i = 0; i < 30; i++) { const t = makeTask(tp); if (!ok || ok(t)) return t; } return null;
   } };
 }
@@ -7088,6 +6952,8 @@ course({
    Filled once every topic is known — Topic Packs register at the end of the page (p0_packs.js → placeRemoteTopics). */
 for (let g = 1; g <= 10; g++) course({ id: String(g), g, label: `${g} klasė`, name: `${g} klasė`, sheet: g >= 9 ? 'pupp' : null, chapters: [], rest: g });
 let COURSES_FILLED = false;
+/** packs written only for the B course's shapes (degrees, B textbook): never listed in an A course */
+const ONLY_B = new Set(['g12-trigeqdeg', 'g12-trigsameb']);
 function fillCourses() {
   if (COURSES_FILLED) return; COURSES_FILLED = true;
   const isA = (t) => /\(Išplėstinis kursas\.\)/.test(t.theory);
@@ -7097,7 +6963,7 @@ function fillCourses() {
     for (const id of [...used]) for (const sh of (TOPICS.find(t => t.id === id) || {}).shapes || []) if (sh.src) used.add(sh.src);   // reused as a course shape
     let n = c.chapters.length ? Math.max(...c.chapters.map(ch => ch.n)) + 1 : 1;
     for (const [k, name] of Object.entries(AREAS)) {
-      const tps = TOPICS.filter(t => t.g === c.rest && t.area === k && !used.has(t.id) && !t.shapes && !(c.restB && isA(t)));   // shaped topics belong to their own course
+      const tps = TOPICS.filter(t => t.g === c.rest && t.area === k && !used.has(t.id) && !t.shapes && !(c.restB && isA(t)) && !(/A$/.test(c.id) && ONLY_B.has(t.id)));   // shaped topics belong to their own course
       if (!tps.length) continue;
       const ch = { n: n++, title: (c.chapters.length ? 'Kitos temos · ' : '') + name, lessons: [], other: true };
       for (const t of tps) { const L = { key: t.id, title: t.title, src: [{ id: t.id }], kind: 'learn', ch, course: c }; L.id = `${c.id}.${ch.n}.${L.key}`; ch.lessons.push(L); }
@@ -10690,7 +10556,7 @@ const EXAMF = (function () {
     'g11-powerfunc': ['pow-neg', 'pow-frac'], 'g11-compose': [], 'g11-sys3': [], 'g11-apmid': ['prog-mid', 'ap', 'gp'], 'g12-dihedral': ['pyth', 'right-trig'], 'g12-frustum': ['frust-cone', 'frust-pyr'],
     'g12-rvvar': ['rv'], 'g12-trigineq': ['trig-table90', 'unit-circle'],
     'g12a-same': ['pyth-id', 'tg-def', 'tg-cos'], 'g12a-sum': ['add-form', 'double', 'pyth-id'], 'g12a-eq': ['trig-eq-rad', 'trig-table90', 'double', 'add-form'],
-    'g12a-ineq': ['trig-table90', 'unit-circle', 'double', 'add-form'], 'g12b-same': ['pyth-id', 'tg-def', 'tg-cos'], 'g12b-eq': ['trig-eq-deg', 'trig-table90'],
+    'g12a-ineq': ['trig-table90', 'unit-circle', 'double', 'add-form'], 'g12b-same': ['pyth-id', 'tg-def', 'tg-cos'], 'g12b-eq': ['trig-eq-deg', 'trig-table90'], 'g12-trigeqdeg': ['trig-eq-deg', 'trig-table90'], 'g12-trigsameb': ['pyth-id', 'tg-def', 'tg-cos'],
     'g12a-lim': ['sq-diff'], 'g12a-dconc': ['tangent', 'deriv-basic'], 'g12a-dcalc': ['deriv-rules', 'deriv-table', 'deriv-basic', 'deriv-pow', 'tangent'], 'g12a-dapp': ['monot', 'deriv-basic', 'deriv-pow'],
     'g12b-dcalc': ['tangent', 'deriv-basic', 'deriv-pow'], 'g12b-dapp': ['monot', 'deriv-basic', 'deriv-pow'],
   };
@@ -12102,9 +11968,11 @@ registerRemoteTopic({"id":"g12-optim","g":12,"area":"A","title":"Optimizavimo u�
 registerRemoteTopic({"id":"g12-revol","g":12,"area":"G","title":"Sukinio tūris integralu","theory":"<div class=\"rule\">Sukant kreivę <span class=\"m\"><i>y</i> = <i>f</i>(<i>x</i>)</span>, <span class=\"m\"><i>x</i> ∈ [<i>a</i>; <i>b</i>]</span> apie Ox ašį, gaunamo kūno tūris <span class=\"m\"><i>V</i> = π ∫<sub><i>a</i></sub><sup><i>b</i></sup> <i>f</i><sup>2</sup>(<i>x</i>) d<i>x</i></span>. (Išplėstinis kursas.)</div>","lesson":{"goal":"Apskaičiuoti sukinio tūrį integralu.","how":["Pakelk funkciją kvadratu: f²(x).","Integruok nuo a iki b.","Padaugink iš π."],"why":"<p>Sukant kreivę apie Ox ašį, kiekvienas plonas pjūvis tampa skrituliu su spinduliu f(x) ir plotu πf²(x). Sudėję (integruodami) visų tokių „monetų“ tūrius, gauname V = π∫f²(x) dx. (Išplėstinis kursas.)</p>\n<p>Patikrink formulę su žinomais kūnais: sukant tiesę <i>y</i> = <i>c</i> gaunamas ritinys (π∫c² dx = πc²h), o tiesę <i>y</i> = <i>kx</i> — kūgis, ir integralas duoda tą patį, ką mokykliniai tūrio formulės. Valdiklyje didink diskų skaičių n — jų tūrių suma artėja prie integralo.</p>","tips":["Integruojama f²(x), ne f(x): disko plotas πr², o spindulys r = f(x)."]},"prerequisites":["g12-integral"],"listAfter":"g12-intfun","viz":[{"w":"integral"}],"solver":{"kind":"integral","preset":{"f":"x","a":"0","b":"4"}},"pitfalls":["Nepamiršk daugiklio π: V = π∫f²(x) dx.","Integruojama f²(x), ne f(x): kiekvienas pjūvis — skritulys, kurio plotas π·f²(x)."]});
 registerRemoteTopic({"id":"g12-tangent","g":12,"area":"A","title":"Liestinės lygtis","theory":"<div class=\"rule\">Liestinė taške <span class=\"m\"><i>x</i><sub>0</sub></span>: <span class=\"m\"><i>y</i> = <i>f</i> ′(<i>x</i><sub>0</sub>)(<i>x</i> − <i>x</i><sub>0</sub>) + <i>f</i>(<i>x</i><sub>0</sub>)</span></div>\n<p>Žingsniai: 1) <span class=\"m\"><i>f</i>(<i>x</i><sub>0</sub>)</span>; 2) <span class=\"m\"><i>f</i> ′(<i>x</i>)</span> ir <span class=\"m\"><i>f</i> ′(<i>x</i><sub>0</sub>)</span>; 3) įstatome į formulę ir sutvarkome į <span class=\"m\"><i>y</i> = <i>k</i><i>x</i> + <i>b</i></span>.</p>","lesson":{"goal":"Parašyti funkcijos grafiko liestinės lygtį.","how":["Apskaičiuok f(x₀).","Rask f′(x) ir f′(x₀) = k.","Įstatyk į y = f′(x₀)(x − x₀) + f(x₀).","Atskliausk ir sutvarkyk į y = kx + b."],"why":"<p>Liestinė — tiesė, kuri taške x₀ „glaudžiasi“ prie grafiko. Ji eina per tašką (x₀; f(x₀)), o jos krypties koeficientas lygus išvestinei f′(x₀). Tiesės per tašką su duotu k lygtis: y = k(x − x₀) + y₀.</p>"},"prerequisites":["g12-dval"],"listAfter":"g12-dval","pitfalls":["Sumaišei: krypties koeficientas yra f′(x₀), o f(x₀) — liesties taško ordinatė."]});
 registerRemoteTopic({"id":"g12-trigeq","g":12,"area":"A","title":"Trigonometrinės lygtys","theory":"<div class=\"rule\"><span class=\"m\">sin <i>x</i> = <i>a</i></span> (|<i>a</i>| ≤ 1): <span class=\"m\"><i>x</i> = arcsin <i>a</i> + 2π<i>k</i></span> arba <span class=\"m\"><i>x</i> = π − arcsin <i>a</i> + 2π<i>k</i></span><br><span class=\"m\">cos <i>x</i> = <i>a</i></span>: <span class=\"m\"><i>x</i> = ±arccos <i>a</i> + 2π<i>k</i></span><br><span class=\"m\">tg <i>x</i> = <i>a</i></span>: <span class=\"m\"><i>x</i> = arctg <i>a</i> + π<i>k</i></span>, <i>k</i> ∈ ℤ</div>\n<p>Intervale <span class=\"m\">[0; 2π)</span> sprendinius patogu rasti vienetiniame apskritime: sinusas — <i>y</i> koordinatė, kosinusas — <i>x</i>. Radianais rašyk <code>π/6; 5π/6</code>. Formulių rinkinyje (A) sprendiniai užrašyti radianais (+ π<i>k</i>, 2π<i>k</i>), o (B) — laipsniais: <span class=\"m\"><i>x</i> = (−1)<sup><i>k</i></sup> arcsin <i>a</i> + 180° · <i>k</i></span>, <span class=\"m\"><i>x</i> = ±arccos <i>a</i> + 360° · <i>k</i></span>. Uždavinyje intervalas [0°; 360°) reiškia atsakymą laipsniais.</p>","lesson":{"goal":"Išspręsti paprasčiausias trigonometrines lygtis intervale [0; 2π).","how":["Rask pagrindinį kampą (arcsin, arccos, arctg) — iš lentelės.","sin: antras sprendinys π − α; cos: 2π − α; tg: α + π.","Palik tik sprendinius iš [0; 2π); rašyk radianais."],"why":"<p>sin x = a reiškia: ieškome vienetinio apskritimo taškų, kurių <b>y koordinatė</b> lygi a. Horizontali tiesė y = a kerta apskritimą dviejuose taškuose (simetriškuose Oy ašies atžvilgiu), todėl sprendinių du: α ir π − α. Kosinusui — vertikali tiesė x = a, taškai simetriški Ox ašies atžvilgiu: α ir −α (2π − α).</p>"},"prerequisites":["g11-arc"],"listAfter":"g12-double","solver":{"kind":"trigeq","preset":{"f":"sin","a":"1/2"}},"pitfalls":["Sumaišei sinusą su kosinusu: sinusas — taško y koordinatė, kosinusas — x koordinatė.","Atsakymą reikia pateikti radianais (su π), ne laipsniais.","Klausiama laipsniais, ne radianais."]});
+registerRemoteTopic({"id":"g12-trigeqdeg","g":12,"area":"A","title":"Trigonometrinės lygtys laipsniais (B)","theory":"<div class=\"rule\"><span class=\"m\">sin <i>x</i> = <i>a</i></span>, |<i>a</i>| ≤ 1: <span class=\"m\"><i>x</i> = arcsin <i>a</i> + 360°<i>k</i></span> arba <span class=\"m\"><i>x</i> = 180° − arcsin <i>a</i> + 360°<i>k</i></span><br><span class=\"m\">cos <i>x</i> = <i>a</i></span>, |<i>a</i>| ≤ 1: <span class=\"m\"><i>x</i> = ±arccos <i>a</i> + 360°<i>k</i></span><br><span class=\"m\">tg <i>x</i> = <i>a</i></span>: <span class=\"m\"><i>x</i> = arctg <i>a</i> + 180°<i>k</i></span>, <span class=\"m\"><i>k</i> ∈ ℤ</span></div><p>Kai |<i>a</i>| &gt; 1, lygtys su sinusu ir kosinusu sprendinių neturi. Atskiri atvejai: <span class=\"m\">sin <i>x</i> = 0 ⇔ <i>x</i> = 180°<i>k</i></span>, <span class=\"m\">cos <i>x</i> = 0 ⇔ <i>x</i> = 90° + 180°<i>k</i></span>.</p><p>Atsakymą rašyk, pvz., <code>x = 30° + 360°k arba x = 150° + 360°k</code> (° galima ir nerašyti).</p>","lesson":{"goal":"Išspręsti paprasčiausias trigonometrines lygtis ir užrašyti sprendinius laipsniais.","how":["Pertvarkyk lygtį į sin x = a, cos x = a arba tg x = a.","Rask pagrindinį kampą iš lentelės.","sin: α + 360°k ir 180° − α + 360°k; cos: ±α + 360°k; tg: α + 180°k.","Intervale — perrink k = 0; ±1; … ir palik tinkamas reikšmes."],"why":"<p>Po pilno apsisukimo (360°) taškas vienetiniame apskritime grįžta į tą pačią vietą, todėl prie kiekvieno sprendinio pridedame 360°k. Tą patį sinusą turi α ir 180° − α, tą patį kosinusą — α ir −α. Tangento periodas 180°.</p>"},"prerequisites":["g11-arc"],"listAfter":"g12-trigeqk","pitfalls":["Tai lygties cos x = a sprendiniai. Vienetiniame apskritime sinusas — y koordinatė, kosinusas — x koordinatė.","Tai lygties sin x = a sprendiniai. Vienetiniame apskritime sinusas — y koordinatė, kosinusas — x koordinatė.","Tai tik vienas sprendinys — perrink visas k reikšmes, kurios duoda sprendinius intervale.","Klausiama laipsniais, ne radianais.","arcsin(−a) = −arcsin a — neprarask minuso."]});
 registerRemoteTopic({"id":"g12-trigeqk","g":12,"area":"A","title":"Trigonometrinės lygtys: bendrasis sprendinys","theory":"<div class=\"rule\"><span class=\"m\">sin <i>x</i> = <i>a</i></span> (|<i>a</i>| ≤ 1): <span class=\"m\"><i>x</i> = arcsin <i>a</i> + 2π<i>k</i></span> arba <span class=\"m\"><i>x</i> = π − arcsin <i>a</i> + 2π<i>k</i></span> (trumpai <span class=\"m\"><i>x</i> = (−1)<sup><i>k</i></sup> arcsin <i>a</i> + π<i>k</i></span>)<br><span class=\"m\">cos <i>x</i> = <i>a</i></span> (|<i>a</i>| ≤ 1): <span class=\"m\"><i>x</i> = ±arccos <i>a</i> + 2π<i>k</i></span><br><span class=\"m\">tg <i>x</i> = <i>a</i></span>: <span class=\"m\"><i>x</i> = arctg <i>a</i> + π<i>k</i></span>, &nbsp;<span class=\"m\"><i>k</i> ∈ ℤ</span></div>\n<p>Atskiri atvejai: <span class=\"m\">sin <i>x</i> = 0</span> ⇔ <span class=\"m\"><i>x</i> = π<i>k</i></span>; <span class=\"m\">sin <i>x</i> = ±1</span> ⇔ <span class=\"m\"><i>x</i> = ±<span class=\"fr\"><span class=\"fn\">π</span><span class=\"fd\">2</span></span> + 2π<i>k</i></span>; <span class=\"m\">cos <i>x</i> = 0</span> ⇔ <span class=\"m\"><i>x</i> = <span class=\"fr\"><span class=\"fn\">π</span><span class=\"fd\">2</span></span> + π<i>k</i></span>; <span class=\"m\">cos <i>x</i> = 1</span> ⇔ <span class=\"m\"><i>x</i> = 2π<i>k</i></span>; <span class=\"m\">cos <i>x</i> = −1</span> ⇔ <span class=\"m\"><i>x</i> = π + 2π<i>k</i></span>.</p>\n<p><span class=\"m\">arcsin(−<i>a</i>) = −arcsin <i>a</i></span>, <span class=\"m\">arctg(−<i>a</i>) = −arctg <i>a</i></span>, bet <span class=\"m\">arccos(−<i>a</i>) = π − arccos <i>a</i></span>.</p>\n<p>Jei argumentas <span class=\"m\"><i>b</i><i>x</i></span>, pirma randame <span class=\"m\"><i>b</i><i>x</i></span>, o paskui <b>visą</b> sprendinį, ir periodą, daliname iš <i>b</i>: <span class=\"m\">sin 2<i>x</i> = 1</span> ⇒ <span class=\"m\">2<i>x</i> = <span class=\"fr\"><span class=\"fn\">π</span><span class=\"fd\">2</span></span> + 2π<i>k</i></span> ⇒ <span class=\"m\"><i>x</i> = <span class=\"fr\"><span class=\"fn\">π</span><span class=\"fd\">4</span></span> + π<i>k</i></span>. Atsakymą radianais rašyk, pvz., <code>pi/12</code> arba <code>π/12</code>; bendrąjį sprendinį — <code>x = pi/6 + 2pi k arba x = 5pi/6 + 2pi k</code> (tinka ir ±, ir (−1)<sup>k</sup>).</p>","lesson":{"goal":"Užrašyti trigonometrinės lygties bendrąjį sprendinį ir suskaičiuoti sprendinius intervale.","how":["Rask pagrindinį kampą α = arcsin a (arccos, arctg).","sin: x = (−1)ᵏα + πk; cos: x = ±α + 2πk; tg: x = α + πk.","Jei argumentas bx — išspręsk bx, tada padalyk viską iš b.","Intervale skaičiuok, kiek k reikšmių tinka."],"why":"<p>Sukant tašką vienetiniu apskritimu, po pilno apsisukimo (2π) jis grįžta į tą pačią vietą — todėl prie kiekvieno sprendinio galima pridėti 2πk su bet kuriuo sveikuoju k. Tangento periodas π, todėl ten +πk. Jei lygtis sin 2x = a, tai 2x turi įprastus sprendinius, o x — dvigubai tankesnius (periodą daliname iš 2).</p>"},"prerequisites":["g12-trigeq"],"listAfter":"g12-trigeq","solver":{"kind":"trigeq","preset":{"f":"sin","a":"1/2"}},"pitfalls":["Tai lygties sin x = a sprendiniai. Vienetiniame apskritime sinusas — y koordinatė, kosinusas — x koordinatė.","Trūksta ženklo ±: kosinusas lyginis, todėl tinka ir −arccos a.","Atsakymo reikia radianais (su π), ne laipsniais.","Tai lygties cos x = a sprendiniai. Vienetiniame apskritime sinusas — y koordinatė, kosinusas — x koordinatė.","arctg(−a) = −arctg a — neprarask minuso."]});
 registerRemoteTopic({"id":"g12-trigid","g":12,"area":"A","title":"Trigonometrinės tapatybės","theory":"<div class=\"rule\"><span class=\"m\">sin<sup>2</sup> α + cos<sup>2</sup> α = 1</span>, <span class=\"m\">tg α = <span class=\"fr\"><span class=\"fn\">sin α</span><span class=\"fd\">cos α</span></span></span>, <span class=\"m\">1 + tg<sup>2</sup> α = <span class=\"fr\"><span class=\"fn\">1</span><span class=\"fd\">cos<sup>2</sup> α</span></span></span>.<br>Ženklą lemia ketvirtis: I — visi +; II — sin +; III — tg +; IV — cos +.</div><p>Kai duota <b>tg α</b>: <span class=\"m\"><span class=\"fr\"><span class=\"fn\">1</span><span class=\"fd\">cos<sup>2</sup> α</span></span> = 1 + tg<sup>2</sup> α</span>. Reiškinį <span class=\"m\"><span class=\"fr\"><span class=\"fn\"><i>a</i> sin α + <i>b</i> cos α</span><span class=\"fd\"><i>c</i> sin α + <i>d</i> cos α</span></span></span> skaičiuojame padalydami iš cos α. Iš <span class=\"m\">sin α + cos α = <i>m</i></span> keliant kvadratu: <span class=\"m\">sin α cos α = <span class=\"fr\"><span class=\"fn\"><i>m</i><sup>2</sup> − 1</span><span class=\"fd\">2</span></span></span>.</p>","lesson":{"goal":"Iš vienos trigonometrinės funkcijos reikšmės rasti kitas.","how":["Duota sin α (ar cos α): cos²α = 1 − sin²α, ištrauk šaknį ir parink ženklą pagal ketvirtį.","Duota tg α: 1/cos²α = 1 + tg²α → cos α (ženklas pagal ketvirtį), tada sin α = tg α · cos α.","Reiškinys su sin α ir cos α, kai žinomas tg α: padalyk skaitiklį ir vardiklį iš cos α.","Duota sin α + cos α = m: pakelk kvadratu — sin α cos α = (m² − 1)/2.","Suprastinant ieškok sin²α + cos²α = 1 ir tg α = sin α / cos α (1 − sin²α = cos²α, 1/cos²α − 1 = tg²α)."],"why":"<p>sin²α + cos²α = 1 — Pitagoro teorema vienetiniame apskritime. Iš jos kiekvieną funkciją galima išreikšti per kitą, tik šaknis duoda du ženklus — tinkamą parenkame pagal <b>ketvirtį</b> (kur taškas yra apskritime).</p>","tips":["Ketvirčių ženklai: I — visi +; II — tik sin +; III — tik tg +; IV — tik cos +.","Žingsniuose gali rašyti su α: „cos²α = 1 − 9/25 = 16/25“ — programa pati žino, koks α."]},"prerequisites":["g10-unit"],"listAfter":"g11-absineq","solver":{"kind":"trigval","preset":{"f":"sin","x":"150"}},"pitfalls":["tg α = sin α / cos α (ne atvirkščiai).","Sinusų ir kosinusų reikšmės nežinomos — padalyk iš cos α ir gausi reiškinį su tg α.","Kvadratų skirtumas: (sin²α − cos²α)(sin²α + cos²α) = sin²α − cos²α."]});
 registerRemoteTopic({"id":"g12-trigineq","g":12,"area":"A","title":"Trigonometrinės nelygybės","theory":"<p>Nelygybę <span class=\"m\">sin <i>x</i> &gt; <i>a</i></span> sprendžiame vienetiniame apskritime (ar sinusoidės grafike): randame lygties <span class=\"m\">sin <i>x</i> = <i>a</i></span> sprendinius ir žiūrime, kurioje lanko dalyje taškai yra <b>aukščiau</b> tiesės <span class=\"m\"><i>y</i> = <i>a</i></span>.</p><div class=\"rule\"><span class=\"m\">sin <i>x</i> &gt; <span class=\"fr\"><span class=\"fn\">1</span><span class=\"fd\">2</span></span></span> intervale <span class=\"m\">[0; 2π)</span>: <span class=\"m\">(<span class=\"fr\"><span class=\"fn\">π</span><span class=\"fd\">6</span></span>; <span class=\"fr\"><span class=\"fn\">5π</span><span class=\"fd\">6</span></span>)</span>.<br><span class=\"m\">cos <i>x</i> ≤ <span class=\"fr\"><span class=\"fn\">1</span><span class=\"fd\">2</span></span></span>: <span class=\"m\">[<span class=\"fr\"><span class=\"fn\">π</span><span class=\"fd\">3</span></span>; <span class=\"fr\"><span class=\"fn\">5π</span><span class=\"fd\">3</span></span>]</span> (kosinusas — <i>x</i> koordinatė).</div><p>(Išplėstinis kursas.)</p>","lesson":{"goal":"Išspręsti trigonometrines nelygybes vienetiniame apskritime.","how":["Išspręsk atitinkamą lygtį (sin x = a) — gausi ribinius kampus.","Nubraižyk apskritimą ir tiesę y = a (sinusui) arba x = a (kosinusui).","Išrink lanką, kuriame nelygybė teisinga; ≤, ≥ — galai įeina, <, > — ne.","Tangentui intervale (−90°; 90°): tg x > a ⇔ x > arctg a (tangentas didėja).","Atsakymą rašyk tuo pačiu matu, kaip intervalas uždavinyje (laipsniais arba radianais)."],"why":"<p>sin x &gt; 1/2 reiškia: taško y koordinatė didesnė už 1/2, t. y. taškas yra <b>virš</b> horizontalios tiesės y = 1/2. Toje apskritimo dalyje kampai eina nuo π/6 iki 5π/6. Pirma randame ribas (lygties sprendinius), paskui — kurioje lanko dalyje nelygybė galioja. (Išplėstinis kursas.)</p>"},"prerequisites":["g12-trigeq"],"listAfter":"g12-trigeqk","solver":{"kind":"trigeq","preset":{"f":"sin","a":"1/2"}},"pitfalls":["Patikrink galus: griežtai nelygybei (&lt;, &gt;) galai neįtraukiami, negriežtai (≤, ≥) — įtraukiami.","Sinusas — y koordinatė: ieškok lanko dalies aukščiau (arba žemiau) tiesės y = a.","Kosinusas — x koordinatė: ieškok lanko dalies dešiniau (arba kairiau) tiesės x = a.","Patikrink, ar galas įeina: griežta nelygybė — neįeina.","Suskaičiavai priešingos nelygybės sprendinius."]});
+registerRemoteTopic({"id":"g12-trigsameb","g":12,"area":"A","title":"To paties kampo formulės: lyginumas ir periodiškumas (B)","theory":"<div class=\"rule\"><span class=\"m\">sin<sup>2</sup> α + cos<sup>2</sup> α = 1</span></div><p><b>Lyginumas:</b> <span class=\"m\">sin(−α) = −sin α</span>, <span class=\"m\">cos(−α) = cos α</span>. <b>Periodiškumas:</b> <span class=\"m\">sin(α + 360°<i>k</i>) = sin α</span>, <span class=\"m\">cos(α + 360°<i>k</i>) = cos α</span>. Gretutiniai kampai: <span class=\"m\">sin(180° − α) = sin α</span>, <span class=\"m\">cos(180° − α) = −cos α</span>.</p>","lesson":{"goal":"Taikyti pagrindinę tapatybę, lyginumą ir periodiškumą reiškiniams prastinti.","how":["Atmesk pilnus apsisukimus (360°k).","Taikyk lyginumą: sin(−α) = −sin α, cos(−α) = cos α.","Gretutiniai kampai: sin(180° − α) = sin α, cos(180° − α) = −cos α.","Pagrindinė tapatybė: sin²α + cos²α = 1."],"why":"<p>Sukant kampą 360° taškas grįžta į tą pačią vietą, todėl reikšmės kartojasi; kampai α ir −α simetriški Ox ašies atžvilgiu, todėl kosinusas tas pats, o sinusas priešingas.</p>"},"prerequisites":["g11-trig"],"listAfter":"g12-trigid","pitfalls":["Išskleidus (sin α + cos α)², lieka ir sin²α + cos²α — tai vienetas, jo nepamiršk."]});
 registerRemoteTopic({"id":"g5-fracadd","g":5,"area":"S","title":"Trupmenų sudėtis ir atimtis","theory":"<p>Trupmenas su skirtingais vardikliais pirmiausia subendravardikliname.</p>\n<div class=\"rule\"><span class=\"m\"><span class=\"fr\"><span class=\"fn\">5</span><span class=\"fd\">6</span></span> − <span class=\"fr\"><span class=\"fn\">1</span><span class=\"fd\">4</span></span> = <span class=\"fr\"><span class=\"fn\">10</span><span class=\"fd\">12</span></span> − <span class=\"fr\"><span class=\"fn\">3</span><span class=\"fd\">12</span></span> = <span class=\"fr\"><span class=\"fn\">7</span><span class=\"fd\">12</span></span></span></div>\n<p>Bendras vardiklis — MBK(6; 4) = 12. Skaitiklį dauginame iš to paties skaičiaus, iš kurio dauginome vardiklį. <b>Vardiklių nesudedame!</b></p>","lesson":{"goal":"Sudėti ir atimti trupmenas su skirtingais vardikliais.","how":["Rask bendrą vardiklį — vardiklių MBK.","Rask papildomus daugiklius: bendras vardiklis : kiekvienos trupmenos vardiklis.","Padaugink kiekvienos trupmenos skaitiklį ir vardiklį iš jos papildomo daugiklio.","Sudėk (atimk) skaitiklius, vardiklį palik.","Suprastink atsakymą."],"why":"<p>Sudėti galima tik <b>vienodo dydžio</b> dalis: pusė ir trečdalis — skirtingo dydžio gabalai. Todėl pirmiausia abi trupmenas supjaustome į vienodus mažesnius gabalus: 1/2 = 3/6, 1/3 = 2/6. Dabar gabalai vienodi — šeštosios — ir 3 + 2 = 5 šeštosios.</p>\n<p>Vardiklių <b>nesudedame</b>: 1/2 + 1/2 ≠ 2/4, nes dvi puselės sudaro visą, o ne pusę.</p>"},"prerequisites":["g5-gcd","g5-simplify"],"listAfter":"g5-simplify","viz":[{"w":"frac"}],"solver":{"kind":"arith","preset":{"e":"5/6 − 1/4"}},"pitfalls":["Vardiklius pakeitei bendru vardikliu, bet skaitiklių nepadauginai. Plėsdami trupmeną, skaitiklį ir vardiklį dauginame iš to paties papildomo daugiklio.","Sumaišei papildomus daugiklius: kiekvienos trupmenos skaitiklį dauginame iš <b>jos pačios</b> papildomo daugiklio (bendras vardiklis : jos vardiklis).","Negalima sudėti vardiklių! Pirmiausia trupmenas reikia subendravardiklinti.","Negalima atimti vardiklių! Pirmiausia trupmenas reikia subendravardiklinti.","Atėmei atvirkščia tvarka: iš pirmosios trupmenos atimame antrąją. Pirmoji čia didesnė, todėl atsakymas teigiamas."]});
 placeRemoteTopics();
 ;
@@ -14065,7 +13933,7 @@ const VIZ = (function () {
     return makeTask(tp, opts);
   }
   async function fetchRemote(pend) {   // a pack task (a course shape's filter may ask for a few tries)
-    for (let i = 0; i < (pend.ok ? 6 : 1); i++) { const r = await engineApi('pack/task', { topic: pend.topic }, REMOTE_SLOW); if (!r) return null; if (!pend.ok || pend.ok({ q: r.q })) return r; }
+    for (let i = 0; i < (pend.ok ? 6 : 1); i++) { const r = await engineApi('pack/task', pend.tpl ? { topic: pend.topic, tpl: pend.tpl } : { topic: pend.topic }, REMOTE_SLOW); if (!r) return null; if (!pend.ok || pend.ok({ q: r.q })) return r; }
     return null;
   }
   /** an anonymous random key for the student's own problems (the server keeps only its hash) */
@@ -14788,9 +14656,9 @@ const VIZ = (function () {
   }
   function partAt(key) { const [i, j] = key.split('.').map(Number); const ex = state.ws.items[i]; return ex && ex.parts[j] ? { ex, t: ex.parts[j].t } : null; }
 
-  const KEYS = { num: ['√', 'π', '/', '^', '(', ')', '−'], set: ['√', 'π', '/', ';', '−', 'nėra'], tuple: [';', '/', '√', '−'], expr: ['α', '^', '/', '(', ')', '√', '−'], text: [':'], ser: ['π', 'k', '±', '/', '^', '(', ')', ';', '√', '°'], series: ['π', 'k', '±', '/', 'arba', '−'], iser: ['π', 'k', '[', ']', '(', ')', ';', '∪', '/', '√', '≤'] };
+  const KEYS = { num: ['√', 'π', '/', '^', '(', ')', '−'], set: ['√', 'π', '/', ';', '−', 'nėra'], tuple: [';', '/', '√', '−'], expr: ['α', '^', '/', '(', ')', '√', '−'], text: [':'], ser: ['π', 'k', '±', '/', '^', '(', ')', ';', '√', '°'], series: ['π', 'k', '±', '/', 'arba', '−'], seriesd: ['°', 'k', '±', 'arba', '−', 'nėra'], iser: ['π', 'k', '[', ']', '(', ')', ';', '∪', '/', '√', '≤'] };
   const WORK_KEYS = ['π', '√', '^', '/', '±', '≤', '≥', 'α', 'k', '°'];
-  const PH = { num: 'pvz. 3/4, 2,5 arba 2√3', set: 'pvz. π/6; 5π/6', tuple: 'pvz. 2; −1', expr: 'pvz. cos^2 α', text: '', ser: 'pvz. π/6 + 2πk; 5π/6 + 2πk', series: 'pvz. x = π/6 + 2πk arba x = 5π/6 + 2πk', iser: 'pvz. (π/6 + 2πk; 5π/6 + 2πk)' };
+  const PH = { num: 'pvz. 3/4, 2,5 arba 2√3', set: 'pvz. π/6; 5π/6', tuple: 'pvz. 2; −1', expr: 'pvz. cos^2 α', text: '', ser: 'pvz. π/6 + 2πk; 5π/6 + 2πk', series: 'pvz. x = π/6 + 2πk arba x = 5π/6 + 2πk', seriesd: 'pvz. x = 30° + 360°k arba x = 150° + 360°k', iser: 'pvz. (π/6 + 2πk; 5π/6 + 2πk)' };
   const stepsPossible = (t) => t.remote ? t.lines : !t.pending && STEPS.usable(t);
   const LET = 'abcdefghij';
 
@@ -14887,7 +14755,7 @@ const VIZ = (function () {
     const pv = el.querySelector('.preview'); v = v.trim(); if (!v || t.ans.t === 'text') { pv.innerHTML = ''; return; }
     try {
       let html;
-      if (t.ans.t === 'ser' || t.ans.t === 'iser' || t.ans.t === 'series') html = esc(v).replace(/\bpi\b/g, 'π').replace(/\*/g, '·').replace(/sqrt/g, '√');
+      if (t.ans.t === 'ser' || t.ans.t === 'iser' || t.ans.t === 'series' || t.ans.t === 'seriesd') html = esc(v).replace(/\bpi\b/g, 'π').replace(/\*/g, '·').replace(/sqrt/g, '√');
       else if (t.ans.t === 'set' || t.ans.t === 'tuple') { if (/^(nėra|nera|∅)$/i.test(v)) html = '∅ (sprendinių nėra)'; else { const parts = v.replace(/^\s*[({\[]\s*|\s*[)}\]]\s*$/g, '').split(';').map(x => x.trim()).filter(Boolean); html = parts.map(p => astHTML(parseExpr(p.replace(/^\s*[a-z][₀-₉\d]*\s*=\s*/i, '')))).join('; '); if (t.ans.t === 'tuple') html = '(' + html + ')'; } }
       else html = astHTML(parseExpr(v));
       pv.innerHTML = `Matau: <span class="m">${html}</span>`;
